@@ -1,0 +1,242 @@
+/* DeepSafe Global Styles */
+/* Brand Typography: Inter (UI), Space Grotesk (Headlines), JetBrains Mono (Technical) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* CSS Variables for Theme System */
+:root {
+  /* Theme transition timing */
+  --theme-transition-duration: 0.3s;
+  --theme-transition-timing: ease;
+
+  /* Focus ring color */
+  --focus-ring-color: #1FB6A6;
+}
+
+/* Dark Mode Variables */
+[data-theme="dark"] {
+  --scrollbar-track: #0B1220;
+  --scrollbar-thumb: #1A2740;
+  --scrollbar-thumb-hover: #1F3C88;
+  --autofill-bg: #121C2E;
+  --autofill-text: #E6ECF5;
+  color-scheme: dark;
+}
+
+/* Light Mode Variables */
+[data-theme="light"] {
+  --scrollbar-track: #F7F9FC;
+  --scrollbar-thumb: #B8C3D9;
+  --scrollbar-thumb-hover: #7F8CA8;
+  --autofill-bg: #FFFFFF;
+  --autofill-text: #0B1B3A;
+  color-scheme: light;
+}
+
+/* Base Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  min-height: 100vh;
+  /* Default to dark mode background */
+  background-color: #0B1220;
+  color: #E6ECF5;
+}
+
+/* Light mode body override */
+[data-theme="light"] body {
+  background-color: #F7F9FC;
+  color: #0B1B3A;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Theme Transition Class - Applied during theme toggle */
+.theme-transitioning,
+.theme-transitioning * {
+  transition:
+    background-color var(--theme-transition-duration) var(--theme-transition-timing),
+    color var(--theme-transition-duration) var(--theme-transition-timing),
+    border-color var(--theme-transition-duration) var(--theme-transition-timing),
+    box-shadow var(--theme-transition-duration) var(--theme-transition-timing),
+    background var(--theme-transition-duration) var(--theme-transition-timing) !important;
+}
+
+/* Scrollbar Styling - Theme Aware */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track, #0B1220);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, #1A2740);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, #1F3C88);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, #1A2740) var(--scrollbar-track, #0B1220);
+}
+
+/* Autofill Styling - Theme Aware */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px var(--autofill-bg, #121C2E) inset !important;
+  -webkit-text-fill-color: var(--autofill-text, #E6ECF5) !important;
+  caret-color: var(--autofill-text, #E6ECF5);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Focus States - Accessibility */
+:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* Remove outline for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Selection Styling */
+::selection {
+  background-color: rgba(31, 182, 166, 0.3);
+  color: inherit;
+}
+
+[data-theme="light"] ::selection {
+  background-color: rgba(31, 60, 136, 0.2);
+}
+
+/* Monospace Font for Technical Data */
+.mono,
+code,
+pre,
+.technical-data {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', 'Liberation Mono', monospace;
+}
+
+/* Headline Font */
+.headline,
+.display-font {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+}
+
+/* Smooth Anchor Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}
+
+/* Gradient Text Utility */
+.gradient-text {
+  background: linear-gradient(90deg, #1F3C88 0%, #1FB6A6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass Effect Utility */
+.glass {
+  background: rgba(18, 28, 46, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .glass {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Glow Effects */
+.glow-primary {
+  box-shadow: 0 0 20px rgba(31, 60, 136, 0.4);
+}
+
+.glow-secondary {
+  box-shadow: 0 0 20px rgba(31, 182, 166, 0.4);
+}
+
+.glow-warning {
+  box-shadow: 0 0 20px rgba(245, 166, 35, 0.4);
+}
+
+.glow-danger {
+  box-shadow: 0 0 20px rgba(214, 69, 69, 0.4);
+}
+
+/* Ensure images are responsive */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Hide elements visually but keep accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
