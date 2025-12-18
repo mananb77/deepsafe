@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0B1220" />
+    <meta name="description" content="DeepSafe - Revolutionizing video call security against deepfakes" />
+    <title>DeepSafe</title>
+    <!-- Prevent theme flash on page load -->
+    <script>
+      (function() {
+        const theme = localStorage.getItem('deepsafe-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        // Set initial background color to prevent flash
+        document.documentElement.style.backgroundColor = theme === 'dark' ? '#0B1220' : '#F7F9FC';
+        // Update meta theme-color
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (metaThemeColor) {
+          metaThemeColor.setAttribute('content', theme === 'dark' ? '#0B1220' : '#F7F9FC');
+        }
+      })();
+    </script>
+    <style>
+      /* Critical CSS to prevent flash */
+      html {
+        background-color: #0B1220;
+      }
+      html[data-theme="light"] {
+        background-color: #F7F9FC;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
