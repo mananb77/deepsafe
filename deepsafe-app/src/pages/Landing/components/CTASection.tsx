@@ -118,7 +118,7 @@ export const CTASection: React.FC = () => {
               size="large"
               startIcon={<GitHubIcon />}
               component="a"
-              href="https://github.com"
+              href="https://github.com/mananb77/deepsafe"
               target="_blank"
               rel="noopener noreferrer"
               sx={{

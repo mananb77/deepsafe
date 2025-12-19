@@ -61,7 +61,7 @@ deepsafe-app/
 export const installationSteps = [
   {
     step: 1,
-    command: 'git clone https://github.com/YOUR_USERNAME/deepsafe-app.git',
+    command: 'git clone https://github.com/mananb77/deepsafe.git',
     description: 'Clone the repository',
   },
   {

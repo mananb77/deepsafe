@@ -213,7 +213,7 @@ export const LandingHeader: React.FC = () => {
             </IconButton>
             <IconButton
               component="a"
-              href="https://github.com"
+              href="https://github.com/mananb77/deepsafe"
               target="_blank"
               rel="noopener noreferrer"
               sx={{

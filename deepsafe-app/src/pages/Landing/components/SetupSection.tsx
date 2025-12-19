@@ -203,7 +203,7 @@ export const SetupSection: React.FC = () => {
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {[
-                  { label: 'GitHub Repository', href: 'https://github.com' },
+                  { label: 'GitHub Repository', href: 'https://github.com/mananb77/deepsafe' },
                   { label: 'Documentation', href: '#' },
                   { label: 'API Reference', href: '#' },
                 ].map((link) => (

@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
   const footerLinks = [
     { label: 'Interactive Demo', path: '/demo' },
     { label: 'Dashboard', path: '/app/welcome' },
-    { label: 'GitHub', href: 'https://github.com', external: true },
+    { label: 'GitHub', href: 'https://github.com/mananb77/deepsafe', external: true },
   ];
 
   return (
@@ -143,7 +143,7 @@ export const Footer: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <IconButton
               component="a"
-              href="https://github.com"
+              href="https://github.com/mananb77/deepsafe"
               target="_blank"
               rel="noopener noreferrer"
               sx={{
