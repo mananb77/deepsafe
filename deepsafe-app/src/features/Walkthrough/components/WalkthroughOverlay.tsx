@@ -7,6 +7,7 @@ import {
   Replay as ReplayIcon,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { brandColors } from '../../../theme/colors';
 import { useThemeMode } from '../../../context/ThemeContext';
 import { useWalkthroughContext } from '../context/WalkthroughContext';
@@ -28,6 +29,7 @@ interface HotspotPosition {
 
 export const WalkthroughOverlay: React.FC = () => {
   const { isDark } = useThemeMode();
+  const navigate = useNavigate();
   const {
     state,
     dispatch,
@@ -150,6 +152,7 @@ export const WalkthroughOverlay: React.FC = () => {
   // Handle completion
   const handleCloseCompletion = () => {
     dispatch({ type: 'COMPLETE_WALKTHROUGH' });
+    navigate('/app/dashboard');
   };
 
   const handleRestartFromCompletion = () => {
