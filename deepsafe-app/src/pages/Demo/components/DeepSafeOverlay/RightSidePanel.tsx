@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Box, Typography, IconButton, Paper, Chip, Divider } from '@mui/material';
+import { Box, Typography, IconButton, Paper, Chip, Divider, useMediaQuery, useTheme } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronRight as ChevronRightIcon,
@@ -20,9 +20,10 @@ const MotionPaper = motion(Paper);
 
 const PANEL_WIDTH = 320;
 
-const panelVariants = {
+// Panel variants will be created dynamically based on screen size
+const createPanelVariants = (width: string | number) => ({
   open: {
-    width: PANEL_WIDTH,
+    width: width,
     opacity: 1,
     transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] as const },
   },
@@ -31,13 +32,18 @@ const panelVariants = {
     opacity: 0,
     transition: { duration: 0.2, ease: [0.4, 0, 1, 1] as const },
   },
-};
+});
 
 export const RightSidePanel: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { isDark } = useThemeMode();
   const { state, dispatch, visibleTranscripts, currentStepConfig, riskLevel } = useDemoContext();
   const scrollRef = useRef<HTMLDivElement>(null);
   const animatedScore = useRiskAnimation(state.currentRiskScore);
+
+  // Responsive panel width
+  const panelWidth = isMobile ? '100%' : PANEL_WIDTH;
 
   // Only show during call screens
   const showPanel = currentStepConfig.component === 'call';
@@ -92,9 +98,10 @@ export const RightSidePanel: React.FC = () => {
     <Box
       sx={{
         position: 'absolute',
-        top: 56, // Below the MeetingHeader
+        top: { xs: 48, sm: 56 }, // Below the MeetingHeader
         right: 0,
-        bottom: 140, // Above control bar and navigation gradient
+        bottom: { xs: 100, sm: 140 }, // Above control bar and navigation gradient
+        left: isMobile && state.transcriptExpanded ? 0 : 'auto', // Full width on mobile when expanded
         zIndex: 15,
         display: 'flex',
         alignItems: 'stretch',
@@ -104,7 +111,7 @@ export const RightSidePanel: React.FC = () => {
       {/* Toggle Button */}
       <Box
         sx={{
-          display: 'flex',
+          display: isMobile && state.transcriptExpanded ? 'none' : 'flex',
           alignItems: 'flex-start',
           pt: 2, // Small padding from top
           pointerEvents: 'auto',
@@ -139,7 +146,7 @@ export const RightSidePanel: React.FC = () => {
       <AnimatePresence>
         {state.transcriptExpanded && (
           <MotionPaper
-            variants={panelVariants}
+            variants={createPanelVariants(panelWidth)}
             initial="closed"
             animate="open"
             exit="closed"
@@ -147,10 +154,10 @@ export const RightSidePanel: React.FC = () => {
             sx={{
               height: '100%',
               backgroundColor: isDark
-                ? 'rgba(11, 18, 32, 0.95)'
-                : 'rgba(255, 255, 255, 0.95)',
+                ? 'rgba(11, 18, 32, 0.98)'
+                : 'rgba(255, 255, 255, 0.98)',
               backdropFilter: 'blur(16px)',
-              borderLeft: `1px solid ${
+              borderLeft: isMobile ? 'none' : `1px solid ${
                 isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
               }`,
               display: 'flex',
@@ -412,6 +419,19 @@ export const RightSidePanel: React.FC = () => {
                   AI MONITORING
                 </Typography>
               </Box>
+              {/* Close button for mobile */}
+              {isMobile && (
+                <IconButton
+                  onClick={handleToggle}
+                  size="small"
+                  sx={{
+                    ml: 1,
+                    color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)',
+                  }}
+                >
+                  <ChevronRightIcon />
+                </IconButton>
+              )}
             </Box>
 
             {/* Transcript Entries */}

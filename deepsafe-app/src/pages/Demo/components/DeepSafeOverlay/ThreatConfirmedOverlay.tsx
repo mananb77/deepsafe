@@ -63,7 +63,7 @@ export const ThreatConfirmedOverlay: React.FC = () => {
           backdropFilter: 'blur(8px)',
         }}
       >
-        <Box sx={{ textAlign: 'center', maxWidth: 480, px: 3 }}>
+        <Box sx={{ textAlign: 'center', maxWidth: { xs: '100%', sm: 480 }, px: { xs: 2, sm: 3 } }}>
           {/* Alert Icon */}
           <MotionBox
             initial={{ scale: 0 }}

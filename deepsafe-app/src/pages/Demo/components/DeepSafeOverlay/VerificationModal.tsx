@@ -98,9 +98,10 @@ export const VerificationModal: React.FC = () => {
           exit="exit"
           elevation={0}
           sx={{
-            width: 420,
-            p: 3,
-            borderRadius: '20px',
+            width: { xs: '92%', sm: 420 },
+            maxWidth: 420,
+            p: { xs: 2, sm: 3 },
+            borderRadius: { xs: '16px', sm: '20px' },
             backgroundColor: isDark ? brandColors.dark.elevated : '#fff',
             border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}`,
             boxShadow: '0 24px 80px rgba(0, 0, 0, 0.4)',

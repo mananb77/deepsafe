@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, IconButton, Tooltip, Stack, Typography } from '@mui/material';
+import { Box, IconButton, Tooltip, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import {
   Mic as MicIcon,
   MicOff as MicOffIcon,
@@ -23,6 +23,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
   isVideoOff = false,
 }) => {
   const { isDark } = useThemeMode();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const ControlButton = ({
     icon,
@@ -30,41 +32,50 @@ export const ControlBar: React.FC<ControlBarProps> = ({
     label,
     isActive = false,
     variant = 'default',
+    hideOnMobile = false,
   }: {
     icon: React.ReactNode;
     activeIcon?: React.ReactNode;
     label: string;
     isActive?: boolean;
     variant?: 'default' | 'danger';
-  }) => (
-    <Tooltip title={label} arrow>
-      <IconButton
-        sx={{
-          width: 48,
-          height: 48,
-          backgroundColor:
-            variant === 'danger'
-              ? '#ea4335'
-              : isActive
-                ? 'rgba(234, 67, 53, 0.9)'
-                : isDark
-                  ? 'rgba(60, 64, 67, 0.95)'
-                  : 'rgba(60, 64, 67, 0.8)',
-          color: '#fff',
-          '&:hover': {
+    hideOnMobile?: boolean;
+  }) => {
+    if (hideOnMobile && isMobile) return null;
+
+    return (
+      <Tooltip title={label} arrow>
+        <IconButton
+          sx={{
+            width: { xs: 40, sm: 48 },
+            height: { xs: 40, sm: 48 },
             backgroundColor:
               variant === 'danger'
-                ? '#c5221f'
+                ? '#ea4335'
                 : isActive
-                  ? 'rgba(234, 67, 53, 1)'
-                  : 'rgba(60, 64, 67, 1)',
-          },
-        }}
-      >
-        {isActive && activeIcon ? activeIcon : icon}
-      </IconButton>
-    </Tooltip>
-  );
+                  ? 'rgba(234, 67, 53, 0.9)'
+                  : isDark
+                    ? 'rgba(60, 64, 67, 0.95)'
+                    : 'rgba(60, 64, 67, 0.8)',
+            color: '#fff',
+            '&:hover': {
+              backgroundColor:
+                variant === 'danger'
+                  ? '#c5221f'
+                  : isActive
+                    ? 'rgba(234, 67, 53, 1)'
+                    : 'rgba(60, 64, 67, 1)',
+            },
+            '& .MuiSvgIcon-root': {
+              fontSize: { xs: 20, sm: 24 },
+            },
+          }}
+        >
+          {isActive && activeIcon ? activeIcon : icon}
+        </IconButton>
+      </Tooltip>
+    );
+  };
 
   return (
     <Box
@@ -73,21 +84,22 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         bottom: 0,
         left: 0,
         right: 0,
-        height: 80,
+        height: { xs: 64, sm: 80 },
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: isDark ? 'rgba(32, 33, 36, 0.95)' : 'rgba(32, 33, 36, 0.9)',
         backdropFilter: 'blur(8px)',
         zIndex: 10,
+        px: { xs: 1, sm: 2 },
       }}
     >
-      {/* Time Display (Google Meet style) */}
+      {/* Time Display (Google Meet style) - hide on mobile */}
       <Box
         sx={{
           position: 'absolute',
-          left: 24,
-          display: 'flex',
+          left: { xs: 8, sm: 24 },
+          display: { xs: 'none', sm: 'flex' },
           alignItems: 'center',
           gap: 1,
         }}
@@ -118,7 +130,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
       </Box>
 
       {/* Center Controls */}
-      <Stack direction="row" spacing={2} alignItems="center">
+      <Stack direction="row" spacing={{ xs: 1, sm: 2 }} alignItems="center">
         <ControlButton
           icon={<MicIcon />}
           activeIcon={<MicOffIcon />}
@@ -131,11 +143,11 @@ export const ControlBar: React.FC<ControlBarProps> = ({
           label={isVideoOff ? 'Turn on camera' : 'Turn off camera'}
           isActive={isVideoOff}
         />
-        <ControlButton icon={<CaptionsIcon />} label="Turn on captions" />
-        <ControlButton icon={<ReactionsIcon />} label="Send a reaction" />
-        <ControlButton icon={<PresentIcon />} label="Present now" />
+        <ControlButton icon={<CaptionsIcon />} label="Turn on captions" hideOnMobile />
+        <ControlButton icon={<ReactionsIcon />} label="Send a reaction" hideOnMobile />
+        <ControlButton icon={<PresentIcon />} label="Present now" hideOnMobile />
         <ControlButton icon={<MoreVertIcon />} label="More options" />
-        <Box sx={{ mx: 1 }} />
+        <Box sx={{ mx: { xs: 0.5, sm: 1 } }} />
         <ControlButton
           icon={<CallEndIcon />}
           label="Leave call"
@@ -143,11 +155,12 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         />
       </Stack>
 
-      {/* Meeting ID (Google Meet style) */}
+      {/* Meeting ID (Google Meet style) - hide on mobile */}
       <Box
         sx={{
           position: 'absolute',
-          right: 24,
+          right: { xs: 8, sm: 24 },
+          display: { xs: 'none', sm: 'block' },
         }}
       >
         <Typography
