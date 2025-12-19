@@ -25,11 +25,14 @@ const queryClient = new QueryClient({
   },
 });
 
+// Get base URL from Vite config (handles GitHub Pages deployment)
+const basename = import.meta.env.BASE_URL;
+
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={basename}>
           <Routes>
             {/* Landing Page - Portfolio showcase */}
             <Route path="/" element={<LandingPage />} />
