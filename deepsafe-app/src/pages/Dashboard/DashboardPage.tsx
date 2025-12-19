@@ -104,7 +104,7 @@ export const DashboardPage: React.FC = () => {
       {/* Metrics Grid */}
       <Grid container spacing={3} sx={{ mb: 4 }} data-walkthrough="metrics">
         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
-          <Box data-walkthrough="metric-total-meetings">
+          <Box data-walkthrough="metric-total-meetings" sx={{ height: '100%' }}>
             <MetricCard
               title="Total Meetings Last Month"
               value={dashboardMetrics.totalMeetings}
@@ -134,7 +134,7 @@ export const DashboardPage: React.FC = () => {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
-          <Box data-walkthrough="metric-compromised">
+          <Box data-walkthrough="metric-compromised" sx={{ height: '100%' }}>
             <MetricCard
               title="Compromised Meetings"
               value={dashboardMetrics.compromisedMeetings}
@@ -164,7 +164,7 @@ export const DashboardPage: React.FC = () => {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
-          <Box data-walkthrough="metric-money">
+          <Box data-walkthrough="metric-money" sx={{ height: '100%' }}>
             <MetricCard
               title="Money Protected"
               value={formatCurrency(dashboardMetrics.totalMoneyProtected)}

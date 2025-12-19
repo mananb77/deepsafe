@@ -18,6 +18,7 @@ import {
   ListItemButton,
   Tooltip,
   useTheme,
+  Drawer,
 } from '@mui/material';
 import {
   Notifications as NotificationsIcon,
@@ -31,6 +32,12 @@ import {
   Info as InfoIcon,
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
+  Menu as MenuIcon,
+  Close as CloseIcon,
+  Dashboard as DashboardIcon,
+  VideoCall as VideoCallIcon,
+  People as PeopleIcon,
+  Help as HelpIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useThemeMode } from '../../context/ThemeContext';
@@ -157,15 +164,20 @@ export const Header: React.FC = () => {
   const { toggleTheme, isDark } = useThemeMode();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const currentPath = window.location.pathname;
 
   const navLinks = [
-    { label: 'Summary', path: '/app/dashboard', dataWalkthrough: 'nav-dashboard' },
-    { label: 'Meeting History', path: '/app/meetings', dataWalkthrough: 'nav-meetings' },
-    { label: 'Participant History', path: '/app/participants', dataWalkthrough: 'nav-participants' },
-    { label: 'Support', path: '/app/support', dataWalkthrough: 'nav-support' },
+    { label: 'Summary', path: '/app/dashboard', dataWalkthrough: 'nav-dashboard', icon: <DashboardIcon /> },
+    { label: 'Meeting History', path: '/app/meetings', dataWalkthrough: 'nav-meetings', icon: <VideoCallIcon /> },
+    { label: 'Participant History', path: '/app/participants', dataWalkthrough: 'nav-participants', icon: <PeopleIcon /> },
+    { label: 'Support', path: '/app/support', dataWalkthrough: 'nav-support', icon: <HelpIcon /> },
   ];
+
+  const handleMobileDrawerToggle = () => {
+    setMobileDrawerOpen(!mobileDrawerOpen);
+  };
 
   const handleProfileClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -197,7 +209,18 @@ export const Header: React.FC = () => {
     >
       <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 3 } }}>
         {/* Left side - Logo and Navigation */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 4 } }}>
+          {/* Mobile Menu Button */}
+          <IconButton
+            onClick={handleMobileDrawerToggle}
+            sx={{
+              display: { xs: 'flex', md: 'none' },
+              color: isDark ? brandColors.darkText.secondary : brandColors.lightText.secondary,
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
+
           <Box
             onClick={() => navigate('/app/dashboard')}
             sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
@@ -445,6 +468,137 @@ export const Header: React.FC = () => {
           </MenuItem>
         </Menu>
       </Toolbar>
+
+      {/* Mobile Navigation Drawer */}
+      <Drawer
+        anchor="left"
+        open={mobileDrawerOpen}
+        onClose={handleMobileDrawerToggle}
+        PaperProps={{
+          sx: {
+            width: 280,
+            background: isDark ? brandColors.dark.surface : brandColors.light.surface,
+            borderRight: `1px solid ${theme.customColors.borderColor}`,
+          },
+        }}
+      >
+        <Box sx={{ p: 2 }}>
+          {/* Drawer Header */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <DeepSafeLogo />
+            <IconButton
+              onClick={handleMobileDrawerToggle}
+              sx={{ color: isDark ? brandColors.darkText.secondary : brandColors.lightText.secondary }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          <Divider sx={{ mb: 2 }} />
+
+          {/* Navigation Links */}
+          <List>
+            {navLinks.map((link) => (
+              <ListItem key={link.path} disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    navigate(link.path);
+                    handleMobileDrawerToggle();
+                  }}
+                  sx={{
+                    borderRadius: 2,
+                    mb: 0.5,
+                    backgroundColor:
+                      (link.path === '/app/dashboard'
+                        ? currentPath === '/app' || currentPath === '/app/dashboard'
+                        : currentPath.startsWith(link.path))
+                        ? isDark
+                          ? 'rgba(31, 182, 166, 0.15)'
+                          : 'rgba(31, 60, 136, 0.1)'
+                        : 'transparent',
+                    '&:hover': {
+                      backgroundColor: isDark
+                        ? 'rgba(255, 255, 255, 0.08)'
+                        : 'rgba(0, 0, 0, 0.04)',
+                    },
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      color:
+                        (link.path === '/app/dashboard'
+                          ? currentPath === '/app' || currentPath === '/app/dashboard'
+                          : currentPath.startsWith(link.path))
+                          ? brandColors.primary.signalTeal
+                          : isDark
+                            ? brandColors.darkText.secondary
+                            : brandColors.lightText.secondary,
+                      minWidth: 40,
+                    }}
+                  >
+                    {link.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={link.label}
+                    primaryTypographyProps={{
+                      fontWeight:
+                        (link.path === '/app/dashboard'
+                          ? currentPath === '/app' || currentPath === '/app/dashboard'
+                          : currentPath.startsWith(link.path))
+                          ? 600
+                          : 500,
+                      color:
+                        (link.path === '/app/dashboard'
+                          ? currentPath === '/app' || currentPath === '/app/dashboard'
+                          : currentPath.startsWith(link.path))
+                          ? isDark
+                            ? brandColors.darkText.primary
+                            : brandColors.lightText.primary
+                          : isDark
+                            ? brandColors.darkText.secondary
+                            : brandColors.lightText.secondary,
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Settings & Profile in Drawer */}
+          <List>
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => {
+                  navigate('/app/settings');
+                  handleMobileDrawerToggle();
+                }}
+                sx={{ borderRadius: 2, mb: 0.5 }}
+              >
+                <ListItemIcon sx={{ color: isDark ? brandColors.darkText.secondary : brandColors.lightText.secondary, minWidth: 40 }}>
+                  <SettingsIcon />
+                </ListItemIcon>
+                <ListItemText primary="Settings" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => {
+                  navigate('/app/profile');
+                  handleMobileDrawerToggle();
+                }}
+                sx={{ borderRadius: 2 }}
+              >
+                <ListItemIcon sx={{ color: isDark ? brandColors.darkText.secondary : brandColors.lightText.secondary, minWidth: 40 }}>
+                  <PersonIcon />
+                </ListItemIcon>
+                <ListItemText primary="My Profile" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Box>
+      </Drawer>
     </AppBar>
   );
 };
