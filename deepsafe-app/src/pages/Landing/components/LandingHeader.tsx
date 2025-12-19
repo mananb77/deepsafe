@@ -9,12 +9,20 @@ import {
   useTheme,
   useScrollTrigger,
   Container,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Divider,
 } from '@mui/material';
 import {
   Security as SecurityIcon,
   GitHub as GitHubIcon,
   LightMode as LightModeIcon,
   DarkMode as DarkModeIcon,
+  Menu as MenuIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useThemeMode } from '../../../context/ThemeContext';
@@ -39,6 +47,11 @@ export const LandingHeader: React.FC = () => {
   const { mode, toggleTheme } = useThemeMode();
   const isDark = theme.palette.mode === 'dark';
   const [activeSection, setActiveSection] = useState('');
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+
+  const handleMobileDrawerToggle = () => {
+    setMobileDrawerOpen(!mobileDrawerOpen);
+  };
 
   const trigger = useScrollTrigger({
     disableHysteresis: true,
@@ -69,6 +82,7 @@ export const LandingHeader: React.FC = () => {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+    setMobileDrawerOpen(false);
   };
 
   return (
@@ -90,6 +104,18 @@ export const LandingHeader: React.FC = () => {
     >
       <Container maxWidth="lg">
         <Toolbar sx={{ px: { xs: 0 }, py: 1 }}>
+          {/* Mobile Menu Button */}
+          <IconButton
+            onClick={handleMobileDrawerToggle}
+            sx={{
+              display: { xs: 'flex', md: 'none' },
+              mr: 1,
+              color: isDark ? '#B8C3D9' : '#4A5D73',
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
+
           {/* Logo */}
           <Box
             sx={{
@@ -220,6 +246,113 @@ export const LandingHeader: React.FC = () => {
           </Box>
         </Toolbar>
       </Container>
+
+      {/* Mobile Navigation Drawer */}
+      <Drawer
+        anchor="left"
+        open={mobileDrawerOpen}
+        onClose={handleMobileDrawerToggle}
+        PaperProps={{
+          sx: {
+            width: 280,
+            background: isDark ? brandColors.dark.surface : brandColors.light.surface,
+          },
+        }}
+      >
+        <Box sx={{ p: 2 }}>
+          {/* Drawer Header */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 2,
+                  background: `linear-gradient(135deg, ${brandColors.primary.deepSafeBlue} 0%, ${brandColors.primary.signalTeal} 100%)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <SecurityIcon sx={{ color: '#fff', fontSize: 20 }} />
+              </Box>
+              <Typography
+                sx={{
+                  fontFamily: '"Space Grotesk", sans-serif',
+                  fontWeight: 700,
+                  fontSize: '1.1rem',
+                  color: isDark ? '#E6ECF5' : '#0B1B3A',
+                }}
+              >
+                DeepSafe
+              </Typography>
+            </Box>
+            <IconButton
+              onClick={handleMobileDrawerToggle}
+              sx={{ color: isDark ? '#B8C3D9' : '#4A5D73' }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          <Divider sx={{ mb: 2 }} />
+
+          {/* Navigation Links */}
+          <List>
+            {navItems.map((item) => (
+              <ListItem key={item.href} disablePadding>
+                <ListItemButton
+                  onClick={() => handleNavClick(item.href)}
+                  sx={{
+                    borderRadius: 2,
+                    mb: 0.5,
+                    backgroundColor:
+                      activeSection === item.href.slice(1)
+                        ? isDark
+                          ? 'rgba(31, 182, 166, 0.15)'
+                          : 'rgba(31, 60, 136, 0.1)'
+                        : 'transparent',
+                  }}
+                >
+                  <ListItemText
+                    primary={item.label}
+                    primaryTypographyProps={{
+                      fontWeight: activeSection === item.href.slice(1) ? 600 : 500,
+                      color: activeSection === item.href.slice(1)
+                        ? brandColors.primary.signalTeal
+                        : isDark
+                          ? '#B8C3D9'
+                          : '#4A5D73',
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Demo Button */}
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => {
+              navigate('/demo');
+              handleMobileDrawerToggle();
+            }}
+            sx={{
+              background: `linear-gradient(135deg, ${brandColors.primary.deepSafeBlue} 0%, ${brandColors.primary.signalTeal} 100%)`,
+              color: '#fff',
+              fontWeight: 600,
+              textTransform: 'none',
+              borderRadius: 2,
+              py: 1.5,
+            }}
+          >
+            Try Interactive Demo
+          </Button>
+        </Box>
+      </Drawer>
     </AppBar>
   );
 };
