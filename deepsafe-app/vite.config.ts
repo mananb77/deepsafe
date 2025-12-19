@@ -5,6 +5,5 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   // Base path for GitHub Pages deployment
-  // Update 'deepsafe-app' to match your repository name
-  base: process.env.GITHUB_ACTIONS ? '/deepsafe-app/' : '/',
+  base: process.env.GITHUB_ACTIONS ? '/deepsafe/' : '/',
 })
