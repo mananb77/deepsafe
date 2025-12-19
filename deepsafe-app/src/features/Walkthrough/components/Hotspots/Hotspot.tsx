@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Box, IconButton } from '@mui/material';
+import React, { useState, useCallback } from 'react';
+import { Box, IconButton, useMediaQuery, useTheme } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Info as InfoIcon,
@@ -23,6 +23,9 @@ interface HotspotProps {
 export const Hotspot: React.FC<HotspotProps> = ({ config, style, tooltipPosition = 'right' }) => {
   const { dispatch, state } = useWalkthroughContext();
   const [isHovered, setIsHovered] = useState(false);
+  const [showTooltipOnTouch, setShowTooltipOnTouch] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const isVisited = state.visitedHotspots.has(config.id);
 
@@ -42,7 +45,8 @@ export const Hotspot: React.FC<HotspotProps> = ({ config, style, tooltipPosition
 
   // Get icon by type
   const getIcon = () => {
-    const iconSx = { fontSize: 14, color: '#fff' };
+    const iconSize = isMobile ? 18 : 14;
+    const iconSx = { fontSize: iconSize, color: '#fff' };
     switch (config.type) {
       case 'info':
         return <InfoIcon sx={iconSx} />;
@@ -55,7 +59,7 @@ export const Hotspot: React.FC<HotspotProps> = ({ config, style, tooltipPosition
     }
   };
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     dispatch({ type: 'MARK_HOTSPOT_VISITED', id: config.id });
 
     if (config.modalContent) {
@@ -64,9 +68,26 @@ export const Hotspot: React.FC<HotspotProps> = ({ config, style, tooltipPosition
         modal: config.modalContent,
       });
     }
-  };
+    // Hide tooltip after clicking on mobile
+    if (isMobile) {
+      setShowTooltipOnTouch(false);
+    }
+  }, [config.id, config.modalContent, dispatch, isMobile]);
+
+  // Handle touch start for mobile - show tooltip briefly
+  const handleTouchStart = useCallback(() => {
+    if (isMobile && !isVisited) {
+      setShowTooltipOnTouch(true);
+      // Auto-hide after 2 seconds
+      setTimeout(() => setShowTooltipOnTouch(false), 2000);
+    }
+  }, [isMobile, isVisited]);
 
   const color = getHotspotColor();
+
+  // Button sizes - larger on mobile for better touch targets
+  const buttonSize = isMobile ? 40 : 28;
+  const pulseRingSize = isMobile ? 48 : 36;
 
   return (
     <MotionBox
@@ -74,13 +95,17 @@ export const Hotspot: React.FC<HotspotProps> = ({ config, style, tooltipPosition
       initial="initial"
       animate={isVisited ? 'initial' : 'animate'}
       style={style}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => !isMobile && setIsHovered(true)}
+      onMouseLeave={() => !isMobile && setIsHovered(false)}
+      onTouchStart={handleTouchStart}
       sx={{
         position: 'relative',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        // Ensure touch target is at least 44px on mobile
+        minWidth: { xs: 44, sm: 'auto' },
+        minHeight: { xs: 44, sm: 'auto' },
       }}
     >
       {/* Pulse Ring */}
@@ -88,8 +113,8 @@ export const Hotspot: React.FC<HotspotProps> = ({ config, style, tooltipPosition
         <Box
           sx={{
             position: 'absolute',
-            width: 36,
-            height: 36,
+            width: pulseRingSize,
+            height: pulseRingSize,
             borderRadius: '50%',
             border: `2px solid ${color}`,
             opacity: 0.5,
@@ -113,8 +138,8 @@ export const Hotspot: React.FC<HotspotProps> = ({ config, style, tooltipPosition
         onClick={handleClick}
         size="small"
         sx={{
-          width: 28,
-          height: 28,
+          width: buttonSize,
+          height: buttonSize,
           backgroundColor: color,
           opacity: isVisited ? 0.6 : 1,
           boxShadow: isVisited ? 'none' : `0 0 12px ${color}80`,
@@ -123,15 +148,21 @@ export const Hotspot: React.FC<HotspotProps> = ({ config, style, tooltipPosition
             opacity: 1,
             transform: 'scale(1.1)',
           },
+          // Better touch feedback
+          '&:active': {
+            transform: 'scale(0.95)',
+          },
           transition: 'all 0.2s ease',
+          // Ensure the button itself is easy to tap
+          touchAction: 'manipulation',
         }}
       >
         {getIcon()}
       </IconButton>
 
-      {/* Tooltip */}
+      {/* Tooltip - show on hover (desktop) or touch (mobile) */}
       <AnimatePresence>
-        {isHovered && (
+        {(isHovered || showTooltipOnTouch) && (
           <HotspotTooltip
             text={config.tooltip}
             isVisible
