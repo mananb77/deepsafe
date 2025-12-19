@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Container } from '@mui/material';
+import { Box, Typography, Container, useMediaQuery, useTheme } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
   PlayCircleOutline as PlayIcon,
@@ -18,6 +18,8 @@ export const WelcomeSplashPage: React.FC = () => {
   const navigate = useNavigate();
   const { isDark } = useThemeMode();
   const { startWalkthrough } = useWalkthroughContext();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleGoDashboard = () => {
     navigate('/app/dashboard');
@@ -90,15 +92,15 @@ export const WelcomeSplashPage: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 2,
-              mb: 4,
+              gap: { xs: 1.5, sm: 2 },
+              mb: { xs: 3, sm: 4 },
             }}
           >
             <Box
               sx={{
-                width: 64,
-                height: 64,
-                borderRadius: '16px',
+                width: { xs: 48, sm: 64 },
+                height: { xs: 48, sm: 64 },
+                borderRadius: { xs: '12px', sm: '16px' },
                 background: `linear-gradient(135deg, ${brandColors.primary.deepSafeBlue} 0%, ${brandColors.primary.signalTeal} 100%)`,
                 display: 'flex',
                 alignItems: 'center',
@@ -106,13 +108,14 @@ export const WelcomeSplashPage: React.FC = () => {
                 boxShadow: `0 8px 32px ${brandColors.primary.deepSafeBlue}40`,
               }}
             >
-              <SecurityIcon sx={{ color: '#FFFFFF', fontSize: 32 }} />
+              <SecurityIcon sx={{ color: '#FFFFFF', fontSize: { xs: 24, sm: 32 } }} />
             </Box>
             <Typography
               variant="h3"
               sx={{
                 fontFamily: '"Space Grotesk", sans-serif',
                 fontWeight: 700,
+                fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' },
                 background: isDark
                   ? `linear-gradient(90deg, ${brandColors.darkText.primary} 0%, ${brandColors.primary.signalTeal} 100%)`
                   : `linear-gradient(90deg, ${brandColors.lightText.primary} 0%, ${brandColors.primary.deepSafeBlue} 100%)`,
@@ -136,6 +139,7 @@ export const WelcomeSplashPage: React.FC = () => {
               sx={{
                 fontFamily: '"Space Grotesk", sans-serif',
                 fontWeight: 600,
+                fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' },
                 color: isDark ? brandColors.darkText.primary : brandColors.lightText.primary,
                 mb: 2,
               }}
@@ -148,8 +152,10 @@ export const WelcomeSplashPage: React.FC = () => {
                 color: isDark ? brandColors.darkText.secondary : brandColors.lightText.secondary,
                 maxWidth: 500,
                 mx: 'auto',
-                mb: 6,
+                mb: { xs: 4, sm: 6 },
+                px: { xs: 2, sm: 0 },
                 lineHeight: 1.7,
+                fontSize: { xs: '0.9rem', sm: '1rem' },
               }}
             >
               Monitor your organization's security posture, detect deepfake threats in real-time,
@@ -165,9 +171,10 @@ export const WelcomeSplashPage: React.FC = () => {
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', sm: 'row' },
-              gap: 3,
+              gap: { xs: 2, sm: 3 },
               justifyContent: 'center',
-              alignItems: 'stretch',
+              alignItems: { xs: 'center', sm: 'stretch' },
+              px: { xs: 2, sm: 0 },
             }}
           >
             {/* Guided Tour Option */}
@@ -175,42 +182,49 @@ export const WelcomeSplashPage: React.FC = () => {
               onClick={handleStartTour}
               sx={{
                 flex: 1,
-                maxWidth: 320,
-                p: 4,
-                borderRadius: 4,
+                width: { xs: '100%', sm: 'auto' },
+                maxWidth: { xs: '100%', sm: 320 },
+                p: { xs: 3, sm: 4 },
+                borderRadius: { xs: 3, sm: 4 },
                 background: isDark
                   ? `linear-gradient(135deg, ${brandColors.primary.deepSafeBlue}20 0%, ${brandColors.primary.signalTeal}10 100%)`
                   : `linear-gradient(135deg, ${brandColors.primary.deepSafeBlue}10 0%, ${brandColors.primary.signalTeal}05 100%)`,
                 border: `2px solid ${brandColors.primary.signalTeal}40`,
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
+                // Better touch feedback
+                WebkitTapHighlightColor: 'transparent',
                 '&:hover': {
-                  transform: 'translateY(-4px)',
+                  transform: isMobile ? 'none' : 'translateY(-4px)',
                   boxShadow: `0 12px 40px ${brandColors.primary.signalTeal}30`,
                   borderColor: brandColors.primary.signalTeal,
+                },
+                '&:active': {
+                  transform: 'scale(0.98)',
                 },
               }}
             >
               <Box
                 sx={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: '14px',
+                  width: { xs: 48, sm: 56 },
+                  height: { xs: 48, sm: 56 },
+                  borderRadius: { xs: '12px', sm: '14px' },
                   background: `linear-gradient(135deg, ${brandColors.primary.signalTeal} 0%, ${brandColors.primary.deepSafeBlue} 100%)`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   mx: 'auto',
-                  mb: 3,
+                  mb: { xs: 2, sm: 3 },
                 }}
               >
-                <PlayIcon sx={{ color: '#FFFFFF', fontSize: 28 }} />
+                <PlayIcon sx={{ color: '#FFFFFF', fontSize: { xs: 24, sm: 28 } }} />
               </Box>
               <Typography
                 variant="h6"
                 sx={{
                   fontFamily: '"Space Grotesk", sans-serif',
                   fontWeight: 600,
+                  fontSize: { xs: '1rem', sm: '1.25rem' },
                   color: isDark ? brandColors.darkText.primary : brandColors.lightText.primary,
                   mb: 1.5,
                 }}
@@ -223,6 +237,7 @@ export const WelcomeSplashPage: React.FC = () => {
                   color: isDark ? brandColors.darkText.secondary : brandColors.lightText.secondary,
                   mb: 2,
                   lineHeight: 1.6,
+                  fontSize: { xs: '0.85rem', sm: '0.875rem' },
                 }}
               >
                 New here? Let us walk you through all the features in about 5 minutes.
@@ -236,6 +251,7 @@ export const WelcomeSplashPage: React.FC = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 0.5,
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' },
                 }}
               >
                 Recommended for first-time users
@@ -247,29 +263,34 @@ export const WelcomeSplashPage: React.FC = () => {
               onClick={handleGoDashboard}
               sx={{
                 flex: 1,
-                maxWidth: 320,
-                p: 4,
-                borderRadius: 4,
+                width: { xs: '100%', sm: 'auto' },
+                maxWidth: { xs: '100%', sm: 320 },
+                p: { xs: 3, sm: 4 },
+                borderRadius: { xs: 3, sm: 4 },
                 background: isDark
                   ? brandColors.dark.elevated
                   : brandColors.light.surface,
                 border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
+                WebkitTapHighlightColor: 'transparent',
                 '&:hover': {
-                  transform: 'translateY(-4px)',
+                  transform: isMobile ? 'none' : 'translateY(-4px)',
                   boxShadow: isDark
                     ? '0 12px 40px rgba(0,0,0,0.4)'
                     : '0 12px 40px rgba(0,0,0,0.1)',
                   borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
                 },
+                '&:active': {
+                  transform: 'scale(0.98)',
+                },
               }}
             >
               <Box
                 sx={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: '14px',
+                  width: { xs: 48, sm: 56 },
+                  height: { xs: 48, sm: 56 },
+                  borderRadius: { xs: '12px', sm: '14px' },
                   background: isDark
                     ? 'rgba(255,255,255,0.1)'
                     : 'rgba(0,0,0,0.05)',
@@ -277,13 +298,13 @@ export const WelcomeSplashPage: React.FC = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   mx: 'auto',
-                  mb: 3,
+                  mb: { xs: 2, sm: 3 },
                 }}
               >
                 <DashboardIcon
                   sx={{
                     color: isDark ? brandColors.darkText.primary : brandColors.lightText.primary,
-                    fontSize: 28,
+                    fontSize: { xs: 24, sm: 28 },
                   }}
                 />
               </Box>
@@ -292,6 +313,7 @@ export const WelcomeSplashPage: React.FC = () => {
                 sx={{
                   fontFamily: '"Space Grotesk", sans-serif',
                   fontWeight: 600,
+                  fontSize: { xs: '1rem', sm: '1.25rem' },
                   color: isDark ? brandColors.darkText.primary : brandColors.lightText.primary,
                   mb: 1.5,
                 }}
@@ -304,6 +326,7 @@ export const WelcomeSplashPage: React.FC = () => {
                   color: isDark ? brandColors.darkText.secondary : brandColors.lightText.secondary,
                   mb: 2,
                   lineHeight: 1.6,
+                  fontSize: { xs: '0.85rem', sm: '0.875rem' },
                 }}
               >
                 Jump straight into the dashboard and explore on your own.
@@ -317,9 +340,10 @@ export const WelcomeSplashPage: React.FC = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 0.5,
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' },
                 }}
               >
-                <ArrowForwardIcon sx={{ fontSize: 14 }} />
+                <ArrowForwardIcon sx={{ fontSize: { xs: 12, sm: 14 } }} />
                 Skip the tour
               </Typography>
             </Box>
@@ -330,12 +354,13 @@ export const WelcomeSplashPage: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8, duration: 0.5 }}
-            sx={{ mt: 6 }}
+            sx={{ mt: { xs: 4, sm: 6 } }}
           >
             <Typography
               variant="caption"
               sx={{
                 color: isDark ? brandColors.darkText.muted : brandColors.lightText.muted,
+                fontSize: { xs: '0.7rem', sm: '0.75rem' },
               }}
             >
               You can always access the tour later from the Support page
