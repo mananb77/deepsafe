@@ -102,20 +102,22 @@ export const DashboardPage: React.FC = () => {
       </Box>
 
       {/* Metrics Grid */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={3} sx={{ mb: 4 }} data-walkthrough="metrics">
         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
-          <MetricCard
-            title="Total Meetings Last Month"
-            value={dashboardMetrics.totalMeetings}
-            trend={{
-              value: dashboardMetrics.totalMeetingsTrend,
-              direction: dashboardMetrics.totalMeetingsTrend > 0 ? 'up' : 'down',
-              label: 'vs prev',
-              isPositive: true,
-            }}
-            icon={<VideoCallIcon />}
-            onClick={() => navigate('/meetings')}
-          />
+          <Box data-walkthrough="metric-total-meetings">
+            <MetricCard
+              title="Total Meetings Last Month"
+              value={dashboardMetrics.totalMeetings}
+              trend={{
+                value: dashboardMetrics.totalMeetingsTrend,
+                direction: dashboardMetrics.totalMeetingsTrend > 0 ? 'up' : 'down',
+                label: 'vs prev',
+                isPositive: true,
+              }}
+              icon={<VideoCallIcon />}
+              onClick={() => navigate('/app/meetings')}
+            />
+          </Box>
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
           <MetricCard
@@ -128,22 +130,24 @@ export const DashboardPage: React.FC = () => {
               isPositive: true,
             }}
             icon={<PeopleIcon />}
-            onClick={() => navigate('/participants')}
+            onClick={() => navigate('/app/participants')}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
-          <MetricCard
-            title="Compromised Meetings"
-            value={dashboardMetrics.compromisedMeetings}
-            isAlert={dashboardMetrics.compromisedMeetings > 0}
-            trend={{
-              value: dashboardMetrics.compromisedMeetingsTrend,
-              direction: dashboardMetrics.compromisedMeetingsTrend > 0 ? 'up' : 'down',
-              label: 'vs prev',
-              isPositive: dashboardMetrics.compromisedMeetingsTrend <= 0,
-            }}
-            onClick={() => navigate('/meetings?filter=compromised')}
-          />
+          <Box data-walkthrough="metric-compromised">
+            <MetricCard
+              title="Compromised Meetings"
+              value={dashboardMetrics.compromisedMeetings}
+              isAlert={dashboardMetrics.compromisedMeetings > 0}
+              trend={{
+                value: dashboardMetrics.compromisedMeetingsTrend,
+                direction: dashboardMetrics.compromisedMeetingsTrend > 0 ? 'up' : 'down',
+                label: 'vs prev',
+                isPositive: dashboardMetrics.compromisedMeetingsTrend <= 0,
+              }}
+              onClick={() => navigate('/app/meetings?filter=compromised')}
+            />
+          </Box>
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
           <MetricCard
@@ -156,21 +160,23 @@ export const DashboardPage: React.FC = () => {
               label: 'vs prev',
               isPositive: dashboardMetrics.suspiciousUsersTrend <= 0,
             }}
-            onClick={() => navigate('/participants?filter=flagged')}
+            onClick={() => navigate('/app/participants?filter=flagged')}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
-          <MetricCard
-            title="Money Protected"
-            value={formatCurrency(dashboardMetrics.totalMoneyProtected)}
-            trend={{
-              value: Number((dashboardMetrics.totalMoneyProtectedTrend / 1000).toFixed(0)),
-              direction: 'up',
-              label: 'K',
-              isPositive: true,
-            }}
-            icon={<MoneyIcon />}
-          />
+          <Box data-walkthrough="metric-money">
+            <MetricCard
+              title="Money Protected"
+              value={formatCurrency(dashboardMetrics.totalMoneyProtected)}
+              trend={{
+                value: Number((dashboardMetrics.totalMoneyProtectedTrend / 1000).toFixed(0)),
+                direction: 'up',
+                label: 'K',
+                isPositive: true,
+              }}
+              icon={<MoneyIcon />}
+            />
+          </Box>
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
           <MetricCard
@@ -191,6 +197,7 @@ export const DashboardPage: React.FC = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <Card
+            data-walkthrough="chart"
             sx={{
               background: isDark
                 ? theme.gradients.deepOcean
@@ -258,7 +265,9 @@ export const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
-          <RecentIncidents incidents={recentIncidents} />
+          <Box data-walkthrough="incidents">
+            <RecentIncidents incidents={recentIncidents} />
+          </Box>
         </Grid>
       </Grid>
 
@@ -285,7 +294,7 @@ export const DashboardPage: React.FC = () => {
             <Button
               variant="outlined"
               startIcon={<SearchIcon />}
-              onClick={() => navigate('/meetings')}
+              onClick={() => navigate('/app/meetings')}
               sx={{
                 borderColor: isDark
                   ? brandColors.primary.signalTeal
@@ -332,7 +341,7 @@ export const DashboardPage: React.FC = () => {
             <Button
               variant="outlined"
               startIcon={<SettingsIcon />}
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/app/settings')}
               sx={{
                 borderColor: isDark
                   ? brandColors.primary.signalTeal

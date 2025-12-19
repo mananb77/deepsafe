@@ -147,7 +147,7 @@ export const SupportPage: React.FC = () => {
   });
 
   const handleOpenArticle = (articleId: string) => {
-    navigate(`/support/articles/${articleId}`);
+    navigate(`/app/support/articles/${articleId}`);
   };
 
   const quickHelpCards = [

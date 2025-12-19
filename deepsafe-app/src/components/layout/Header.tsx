@@ -88,14 +88,16 @@ interface NavLinkProps {
   path: string;
   isActive: boolean;
   onClick: () => void;
+  dataWalkthrough?: string;
 }
 
-const NavLink: React.FC<NavLinkProps> = ({ label, isActive, onClick }) => {
+const NavLink: React.FC<NavLinkProps> = ({ label, isActive, onClick, dataWalkthrough }) => {
   const { isDark } = useThemeMode();
 
   return (
     <Box
       onClick={onClick}
+      data-walkthrough={dataWalkthrough}
       sx={{
         px: 2,
         py: 1,
@@ -159,10 +161,10 @@ export const Header: React.FC = () => {
   const currentPath = window.location.pathname;
 
   const navLinks = [
-    { label: 'Summary', path: '/' },
-    { label: 'Meeting History', path: '/meetings' },
-    { label: 'Participant History', path: '/participants' },
-    { label: 'Support', path: '/support' },
+    { label: 'Summary', path: '/app/dashboard', dataWalkthrough: 'nav-dashboard' },
+    { label: 'Meeting History', path: '/app/meetings', dataWalkthrough: 'nav-meetings' },
+    { label: 'Participant History', path: '/app/participants', dataWalkthrough: 'nav-participants' },
+    { label: 'Support', path: '/app/support', dataWalkthrough: 'nav-support' },
   ];
 
   const handleProfileClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -197,24 +199,25 @@ export const Header: React.FC = () => {
         {/* Left side - Logo and Navigation */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <Box
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/app/dashboard')}
             sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
             <DeepSafeLogo />
           </Box>
 
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5 }}>
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.5 }} data-walkthrough="header">
             {navLinks.map((link) => (
               <NavLink
                 key={link.path}
                 label={link.label}
                 path={link.path}
                 isActive={
-                  link.path === '/'
-                    ? currentPath === '/' || currentPath === '/dashboard'
+                  link.path === '/app/dashboard'
+                    ? currentPath === '/app' || currentPath === '/app/dashboard'
                     : currentPath.startsWith(link.path)
                 }
-                onClick={() => navigate(link.path === '/' ? '/dashboard' : link.path)}
+                onClick={() => navigate(link.path)}
+                dataWalkthrough={link.dataWalkthrough}
               />
             ))}
           </Box>
@@ -226,6 +229,7 @@ export const Header: React.FC = () => {
           <Tooltip title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
             <IconButton
               onClick={toggleTheme}
+              data-walkthrough="theme-toggle"
               sx={{
                 color: isDark ? brandColors.darkText.secondary : brandColors.lightText.secondary,
                 background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
@@ -409,10 +413,11 @@ export const Header: React.FC = () => {
           <Divider />
           <MenuItem
             onClick={() => {
-              navigate('/settings');
+              navigate('/app/settings');
               handleProfileClose();
             }}
             sx={{ py: 1.5 }}
+            data-walkthrough="nav-settings"
           >
             <ListItemIcon>
               <SettingsIcon fontSize="small" />
@@ -421,7 +426,7 @@ export const Header: React.FC = () => {
           </MenuItem>
           <MenuItem
             onClick={() => {
-              navigate('/profile');
+              navigate('/app/profile');
               handleProfileClose();
             }}
             sx={{ py: 1.5 }}

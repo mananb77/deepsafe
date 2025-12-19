@@ -270,7 +270,7 @@ export const MeetingDetailPage: React.FC = () => {
           Meeting not found
         </Typography>
         <Button
-          onClick={() => navigate('/meetings')}
+          onClick={() => navigate('/app/meetings')}
           sx={{
             mt: 2,
             color: brandColors.primary.signalTeal,
@@ -858,7 +858,7 @@ export const MeetingDetailPage: React.FC = () => {
                         <Button
                           size="small"
                           onClick={() =>
-                            navigate(`/participants/${participant.id}`)
+                            navigate(`/app/participants/${participant.id}`)
                           }
                           sx={{
                             color: brandColors.primary.signalTeal,

@@ -215,7 +215,7 @@ export const ProfilePage: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<EditIcon />}
-            onClick={() => navigate('/settings')}
+            onClick={() => navigate('/app/settings')}
             sx={{
               borderColor: brandColors.primary.signalTeal,
               color: brandColors.primary.signalTeal,

@@ -172,7 +172,7 @@ export const ParticipantsPage: React.FC = () => {
   };
 
   const handleRowClick = (participantId: string) => {
-    navigate(`/participants/${participantId}`);
+    navigate(`/app/participants/${participantId}`);
   };
 
   return (

@@ -143,7 +143,7 @@ export const ParticipantProfilePage: React.FC = () => {
       <Box>
         <Button
           startIcon={<BackIcon />}
-          onClick={() => navigate('/participants')}
+          onClick={() => navigate('/app/participants')}
           sx={{
             mb: 2,
             color: brandColors.primary.signalTeal,
@@ -195,7 +195,7 @@ export const ParticipantProfilePage: React.FC = () => {
       {/* Back Button */}
       <Button
         startIcon={<BackIcon />}
-        onClick={() => navigate('/participants')}
+        onClick={() => navigate('/app/participants')}
         sx={{
           mb: 2,
           color: brandColors.primary.signalTeal,
@@ -1040,7 +1040,7 @@ export const ParticipantProfilePage: React.FC = () => {
                               : 'rgba(31, 60, 136, 0.03)',
                         },
                       }}
-                      onClick={() => navigate(`/meetings/${meeting.meetingId}`)}
+                      onClick={() => navigate(`/app/meetings/${meeting.meetingId}`)}
                     >
                       <TableCell>
                         <Typography
@@ -1130,7 +1130,7 @@ export const ParticipantProfilePage: React.FC = () => {
                             size="small"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/meetings/${meeting.meetingId}`);
+                              navigate(`/app/meetings/${meeting.meetingId}`);
                             }}
                             sx={{
                               color: brandColors.primary.signalTeal,

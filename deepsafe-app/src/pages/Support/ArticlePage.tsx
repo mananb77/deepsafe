@@ -325,7 +325,7 @@ export const ArticlePage: React.FC = () => {
         <Button
           variant="contained"
           startIcon={<BackIcon />}
-          onClick={() => navigate('/support')}
+          onClick={() => navigate('/app/support')}
         >
           Back to Support
         </Button>
@@ -373,7 +373,7 @@ export const ArticlePage: React.FC = () => {
       {/* Back Button */}
       <Button
         startIcon={<BackIcon />}
-        onClick={() => navigate('/support')}
+        onClick={() => navigate('/app/support')}
         sx={{
           mb: 3,
           color: isDark ? brandColors.darkText.secondary : brandColors.lightText.secondary,
@@ -560,7 +560,7 @@ export const ArticlePage: React.FC = () => {
               return (
                 <Paper
                   key={relatedId}
-                  onClick={() => navigate(`/support/articles/${relatedId}`)}
+                  onClick={() => navigate(`/app/support/articles/${relatedId}`)}
                   sx={{
                     p: 2.5,
                     flex: '1 1 300px',

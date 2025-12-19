@@ -117,7 +117,7 @@ export const MeetingsPage: React.FC = () => {
   };
 
   const handleRowClick = (meetingId: string) => {
-    navigate(`/meetings/${meetingId}`);
+    navigate(`/app/meetings/${meetingId}`);
   };
 
   return (

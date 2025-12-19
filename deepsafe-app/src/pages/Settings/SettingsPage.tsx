@@ -43,13 +43,15 @@ interface SettingsSectionProps {
   title: string;
   icon: React.ReactNode;
   children: React.ReactNode;
+  dataWalkthrough?: string;
 }
 
-const SettingsSection: React.FC<SettingsSectionProps> = ({ title, icon, children }) => {
+const SettingsSection: React.FC<SettingsSectionProps> = ({ title, icon, children, dataWalkthrough }) => {
   const { isDark } = useThemeMode();
 
   return (
     <Paper
+      data-walkthrough={dataWalkthrough}
       sx={{
         p: 3,
         mb: 3,
@@ -223,7 +225,7 @@ export const SettingsPage: React.FC = () => {
       </SettingsSection>
 
       {/* Notification Settings */}
-      <SettingsSection title="Notification Settings" icon={<NotificationsIcon sx={{ color: '#fff', fontSize: 20 }} />}>
+      <SettingsSection title="Notification Settings" icon={<NotificationsIcon sx={{ color: '#fff', fontSize: 20 }} />} dataWalkthrough="notifications">
         <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
           Email Notifications
         </Typography>
@@ -494,7 +496,7 @@ export const SettingsPage: React.FC = () => {
       </SettingsSection>
 
       {/* Integration Settings */}
-      <SettingsSection title="Integrations" icon={<IntegrationsIcon sx={{ color: '#fff', fontSize: 20 }} />}>
+      <SettingsSection title="Integrations" icon={<IntegrationsIcon sx={{ color: '#fff', fontSize: 20 }} />} dataWalkthrough="integrations">
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {integrations.map((integration) => (
             <Box
