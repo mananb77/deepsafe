@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:demo": "vite --config vite.config.demo.ts",
+    "build:demo": "tsc -b && vite build --config vite.config.demo.ts",
+    "preview:demo": "vite preview --config vite.config.demo.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
