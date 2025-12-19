@@ -3,6 +3,7 @@ import { Box, Toolbar, useTheme } from '@mui/material';
 import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { useThemeMode } from '../../context/ThemeContext';
+import { WalkthroughOverlay } from '../../features/Walkthrough';
 
 export const MainLayout: React.FC = () => {
   const theme = useTheme();
@@ -51,6 +52,9 @@ export const MainLayout: React.FC = () => {
           <Outlet />
         </Box>
       </Box>
+
+      {/* Walkthrough Overlay - renders on top of everything when active */}
+      <WalkthroughOverlay />
     </Box>
   );
 };

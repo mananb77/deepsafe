@@ -206,7 +206,6 @@ export const walkthroughScenario: WalkthroughStep[] = [
     type: 'page',
     route: '/app/meetings',
     duration: 18,
-    focusElement: '[data-walkthrough="meetings-table"]',
     highlight: 'element',
     instruction: 'Try the filters to narrow down meetings. Click a high-risk meeting to see forensic details.',
     hotspots: [
@@ -248,7 +247,7 @@ export const walkthroughScenario: WalkthroughStep[] = [
     name: 'Meeting Analysis',
     phase: 'Meeting Analysis',
     type: 'page',
-    route: '/app/meetings/mtg-001', // Use first meeting as example
+    route: '/app/meetings/34190412', // CSO <> Employee meeting (high-risk)
     duration: 25,
     instruction: 'Explore the tabs to see transcript, participants, and forensic evidence.',
     hotspots: [
@@ -364,7 +363,7 @@ export const walkthroughScenario: WalkthroughStep[] = [
     name: 'Participant Profile',
     phase: 'Participant Intelligence',
     type: 'page',
-    route: '/app/participants/participant-002', // Use flagged participant
+    route: '/app/participants/jblake-1', // Jordan Blake (blacklisted participant)
     duration: 20,
     instruction: 'Review threat intelligence and verification details.',
     hotspots: [

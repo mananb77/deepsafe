@@ -52,7 +52,7 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({
     navigate('/app/support');
   };
 
-  const handleClose = () => {
+  const handleContinueToDashboard = () => {
     onClose();
   };
 
@@ -75,7 +75,7 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({
             zIndex: 1400,
             p: 2,
           }}
-          onClick={handleClose}
+          onClick={handleContinueToDashboard}
         >
           <MotionBox
             variants={welcomeModalVariants}
@@ -104,7 +104,7 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({
               }}
             >
               <IconButton
-                onClick={handleClose}
+                onClick={handleContinueToDashboard}
                 sx={{
                   position: 'absolute',
                   top: 12,
@@ -310,7 +310,8 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({
                 </Button>
                 <Button
                   variant="contained"
-                  onClick={handleClose}
+                  onClick={handleContinueToDashboard}
+                  startIcon={<ArrowIcon />}
                   sx={{
                     flex: 1,
                     background: `linear-gradient(135deg, ${brandColors.primary.deepSafeBlue} 0%, ${brandColors.primary.signalTeal} 100%)`,
@@ -321,7 +322,7 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({
                     },
                   }}
                 >
-                  Start Using Dashboard
+                  Continue to Dashboard
                 </Button>
               </Box>
             </Box>

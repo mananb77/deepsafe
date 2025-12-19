@@ -82,6 +82,18 @@ const walkthroughReducer = (state: WalkthroughState, action: WalkthroughAction):
         };
       }
       const nextStep = state.currentStep + 1;
+      // Show completion screen when reaching the final step
+      if (nextStep === WALKTHROUGH_TOTAL_STEPS) {
+        return {
+          ...state,
+          currentStep: nextStep,
+          visitedSteps: state.visitedSteps.includes(nextStep)
+            ? state.visitedSteps
+            : [...state.visitedSteps, nextStep],
+          showCompletion: true,
+          activeModal: null,
+        };
+      }
       return {
         ...state,
         currentStep: nextStep,
@@ -264,6 +276,27 @@ export const WalkthroughProvider: React.FC<WalkthroughProviderProps> = ({ childr
       return;
     }
   }, [state.isActive, state.currentStep, state.showWelcome, state.showCompletion, location.pathname]);
+
+  // Scroll to focus element when step changes
+  useEffect(() => {
+    if (!state.isActive || state.showWelcome || state.showCompletion) return;
+
+    const focusElement = currentStepConfig.focusElement;
+    if (!focusElement) return;
+
+    // Wait for the page to render
+    const timer = setTimeout(() => {
+      const element = document.querySelector(focusElement);
+      if (element) {
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [state.isActive, state.currentStep, state.showWelcome, state.showCompletion, currentStepConfig.focusElement]);
 
   // Action helpers
   const startWalkthrough = useCallback(() => {
