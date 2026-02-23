@@ -1,0 +1,91 @@
+"""
+Base Model and Mixins
+
+Provides common functionality for all SQLAlchemy models.
+"""
+
+from datetime import datetime
+from typing import Any
+from uuid import uuid4
+
+from sqlalchemy import DateTime, String, Boolean, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, declared_attr
+
+from src.shared.database.postgres import Base
+
+
+class TimestampMixin:
+    """Mixin that adds created_at and updated_at timestamps."""
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
+class SoftDeleteMixin:
+    """Mixin that adds soft delete functionality."""
+
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    def soft_delete(self) -> None:
+        """Mark the record as deleted."""
+        self.is_deleted = True
+        self.deleted_at = datetime.utcnow()
+
+    def restore(self) -> None:
+        """Restore a soft-deleted record."""
+        self.is_deleted = False
+        self.deleted_at = None
+
+
+class BaseModel(Base, TimestampMixin):
+    """
+    Abstract base model with UUID primary key and timestamps.
+
+    All models should inherit from this class.
+    """
+
+    __abstract__ = True
+
+    id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False),
+        primary_key=True,
+        default=lambda: str(uuid4()),
+    )
+
+    @declared_attr
+    def __tablename__(cls) -> str:
+        """Generate table name from class name."""
+        # Convert CamelCase to snake_case and pluralize
+        name = cls.__name__
+        import re
+        snake_case = re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+        return f"{snake_case}s"
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert model to dictionary."""
+        return {
+            column.name: getattr(self, column.name)
+            for column in self.__table__.columns
+        }
+
+    def __repr__(self) -> str:
+        """String representation of the model."""
+        return f"<{self.__class__.__name__}(id={self.id})>"
