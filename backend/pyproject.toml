@@ -1,0 +1,185 @@
+[tool.poetry]
+name = "deepsafe-backend"
+version = "0.1.0"
+description = "DeepSafe Backend Services - Social Engineering Defense Platform for Video Conferencing"
+authors = ["DeepSafe Team <team@deepsafe.ai>"]
+readme = "README.md"
+packages = [{ include = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+# Web Framework
+fastapi = "^0.109.0"
+uvicorn = { extras = ["standard"], version = "^0.27.0" }
+gunicorn = "^21.2.0"
+python-multipart = "^0.0.6"
+python-jose = { extras = ["cryptography"], version = "^3.3.0" }
+passlib = { extras = ["bcrypt"], version = "^1.7.4" }
+httpx = "^0.26.0"
+
+# Database - PostgreSQL
+sqlalchemy = { extras = ["asyncio"], version = "^2.0.25" }
+asyncpg = "^0.29.0"
+alembic = "^1.13.1"
+psycopg2-binary = "^2.9.9"
+
+# Database - Redis
+redis = { extras = ["hiredis"], version = "^5.0.1" }
+
+# Database - MongoDB
+motor = "^3.3.2"
+pymongo = "^4.6.1"
+
+# Task Queue
+celery = { extras = ["redis"], version = "^5.3.6" }
+kombu = "^5.3.4"
+flower = "^2.0.1"
+
+# Data Validation
+pydantic = "^2.5.3"
+pydantic-settings = "^2.1.0"
+email-validator = "^2.1.0"
+
+# External APIs
+twilio = "^8.12.0"
+openai = "^1.8.0"
+boto3 = "^1.34.0"
+google-cloud-speech = "^2.24.0"
+google-cloud-storage = "^2.14.0"
+google-api-python-client = "^2.111.0"
+google-auth-httplib2 = "^0.2.0"
+google-auth-oauthlib = "^1.2.0"
+
+# WebSocket
+websockets = "^12.0"
+python-socketio = "^5.10.0"
+
+# Security
+cryptography = "^41.0.7"
+python-dotenv = "^1.0.0"
+
+# Utilities
+structlog = "^24.1.0"
+tenacity = "^8.2.3"
+orjson = "^3.9.12"
+pyyaml = "^6.0.1"
+python-dateutil = "^2.8.2"
+aiofiles = "^23.2.1"
+
+# Monitoring
+prometheus-client = "^0.19.0"
+opentelemetry-api = "^1.22.0"
+opentelemetry-sdk = "^1.22.0"
+opentelemetry-instrumentation-fastapi = "^0.43b0"
+sentry-sdk = { extras = ["fastapi"], version = "^1.39.1" }
+
+[tool.poetry.group.dev.dependencies]
+# Testing
+pytest = "^7.4.4"
+pytest-asyncio = "^0.23.3"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.12.0"
+pytest-xdist = "^3.5.0"
+factory-boy = "^3.3.0"
+faker = "^22.2.0"
+respx = "^0.20.2"
+testcontainers = "^3.7.1"
+aiosqlite = "^0.19.0"
+
+# Code Quality
+black = "^23.12.1"
+isort = "^5.13.2"
+flake8 = "^7.0.0"
+mypy = "^1.8.0"
+ruff = "^0.1.11"
+pre-commit = "^3.6.0"
+
+# Type stubs
+types-redis = "^4.6.0"
+types-python-dateutil = "^2.8.19"
+
+# Documentation
+mkdocs = "^1.5.3"
+mkdocs-material = "^9.5.3"
+
+# Development
+ipython = "^8.20.0"
+watchfiles = "^0.21.0"
+
+[tool.poetry.group.ml.dependencies]
+# ML/AI (for local fallback models)
+torch = "^2.1.2"
+transformers = "^4.36.2"
+librosa = "^0.10.1"
+opencv-python = "^4.9.0.80"
+numpy = "^1.26.3"
+scipy = "^1.12.0"
+scikit-learn = "^1.4.0"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | migrations
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip = ["migrations", ".venv"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "I", "N", "B", "C4"]
+ignore = ["E501"]
+exclude = ["migrations", ".venv"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short --strict-markers -p no:warnings"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "e2e: End-to-end tests",
+    "slow: Slow running tests",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/migrations/*", "*/tests/*"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
+fail_under = 90
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

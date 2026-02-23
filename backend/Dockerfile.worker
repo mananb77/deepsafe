@@ -1,0 +1,140 @@
+# DeepSafe Celery Worker Dockerfile
+# Includes ML dependencies for detection tasks
+
+# ==============================================================================
+# Base stage - Common dependencies
+# ==============================================================================
+FROM python:3.11-slim as base
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONFAULTHANDLER=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies (including ML/audio/video libraries)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    libpq-dev \
+    # Audio processing
+    ffmpeg \
+    libsndfile1 \
+    libsndfile1-dev \
+    # Video processing
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    # General utilities
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
+ENV POETRY_VERSION=1.7.1 \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_NO_INTERACTION=1
+
+RUN curl -sSL https://install.python-poetry.org | python3 - && \
+    ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry
+
+# Set working directory
+WORKDIR /app
+
+# ==============================================================================
+# Dependencies stage - Install Python packages including ML
+# ==============================================================================
+FROM base as dependencies
+
+# Copy dependency files
+COPY pyproject.toml poetry.lock* ./
+
+# Install main and ML dependencies
+RUN poetry install --no-root --only main,ml
+
+# ==============================================================================
+# Development stage - Full development environment for workers
+# ==============================================================================
+FROM base as development
+
+# Copy dependency files
+COPY pyproject.toml poetry.lock* ./
+
+# Install all dependencies including dev and ML
+RUN poetry install --no-root
+
+# Copy application code
+COPY . .
+
+# Install the application
+RUN poetry install --only-root
+
+# Health check for Celery worker
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD celery -A src.shared.messaging.celery_app inspect ping -d celery@$HOSTNAME || exit 1
+
+# Default command for development worker
+CMD ["celery", "-A", "src.shared.messaging.celery_app", "worker", \
+     "--loglevel=info", \
+     "--concurrency=4"]
+
+# ==============================================================================
+# Production stage - Optimized worker for deployment
+# ==============================================================================
+FROM dependencies as production
+
+# Create non-root user for security
+RUN groupadd --gid 1000 deepsafe && \
+    useradd --uid 1000 --gid deepsafe --shell /bin/bash --create-home deepsafe
+
+# Copy application code
+COPY --chown=deepsafe:deepsafe . .
+
+# Install the application
+RUN poetry install --only-root
+
+# Create directories for model cache
+RUN mkdir -p /app/models && chown deepsafe:deepsafe /app/models
+
+# Set model cache directory
+ENV TRANSFORMERS_CACHE=/app/models \
+    TORCH_HOME=/app/models
+
+# Switch to non-root user
+USER deepsafe
+
+# Health check for Celery worker
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD celery -A src.shared.messaging.celery_app inspect ping -d celery@$HOSTNAME || exit 1
+
+# Production command with optimized settings
+CMD ["celery", "-A", "src.shared.messaging.celery_app", "worker", \
+     "--loglevel=info", \
+     "--concurrency=4", \
+     "--prefetch-multiplier=2", \
+     "--max-tasks-per-child=1000"]
+
+# ==============================================================================
+# Beat scheduler stage - For Celery Beat
+# ==============================================================================
+FROM production as beat
+
+# Beat scheduler command
+CMD ["celery", "-A", "src.shared.messaging.celery_app", "beat", \
+     "--loglevel=info"]
+
+# ==============================================================================
+# Flower stage - For Celery monitoring
+# ==============================================================================
+FROM production as flower
+
+# Expose Flower port
+EXPOSE 5555
+
+# Flower monitoring command
+CMD ["celery", "-A", "src.shared.messaging.celery_app", "flower", \
+     "--port=5555", \
+     "--broker_api=http://guest:guest@rabbitmq:15672/api/"]
