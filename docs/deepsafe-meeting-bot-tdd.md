@@ -106,7 +106,7 @@ This hybrid approach provides the operational simplicity of a monolith with the 
 │                  │                                               │
 └──────────────────┼───────────────────────────────────────────────┘
                    │
-          Audio chunks (3s) + Video frames (5 FPS)
+          Audio chunks (3s) + Video frames (2 FPS)
                    │
                    ▼
 ┌──────────────────────────────────────────────────────────────────┐
@@ -610,7 +610,7 @@ POST   /api/v1/auth/logout
 ```
 
 **Token lifecycle:**
-- Access token: JWT, 15-minute expiry, contains `user_id`, `company_id`, `role`, `permissions`
+- Access token: JWT, 30-minute expiry (configurable via `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`), contains `user_id`, `company_id`, `role`, `permissions`
 - Refresh token: Opaque string, 7-day expiry, stored in Redis, single-use (rotation on refresh)
 
 ### 6.3 Core Resource Endpoints
@@ -820,7 +820,7 @@ class ResembleDetector:
 #### 7.2.1 Processing Flow
 
 ```
-Video Frame Batch (5 frames at 5 FPS = 1 second)
+Video Frame Batch (sampled at 2 FPS target)
          │
          ├──────────────────────────────┐
          │                              │
@@ -1155,7 +1155,7 @@ Mobile app receives push → presents biometric challenge (Face ID / Touch ID) �
 │                                                                │
 │  For each active meeting:                                      │
 │                                                                │
-│  1. Meeting Bot → Audio chunks (3s) + Video frames (5 FPS)     │
+│  1. Meeting Bot → Audio chunks (3s) + Video frames (2 FPS)     │
 │  2. Audio Buffer Manager receives chunks                       │
 │  3. Video Frame Queue receives frames                          │
 │  4. Analysis Pipeline dispatches detection tasks               │
@@ -1819,7 +1819,7 @@ function useMeetingWebSocket(meetingId: string) {
      │                       │  (bcrypt, 12 rounds)    │
      │                       │                         │
      │                       │  Generate JWT           │
-     │                       │  (access: 15 min)       │
+     │                       │  (access: 30 min)       │
      │                       │                         │
      │                       │  Generate refresh token │
      │                       │  (opaque, 7 days)       │
@@ -1854,22 +1854,22 @@ function useMeetingWebSocket(meetingId: string) {
 
 ### 13.3 RBAC Permission Matrix
 
-| Permission | Admin | Analyst | Viewer |
-|---|:---:|:---:|:---:|
-| `meetings:read` | Yes | Yes | Yes |
-| `meetings:write` | Yes | — | — |
-| `participants:read` | Yes | Yes | Yes |
-| `incidents:read` | Yes | Yes | Yes |
-| `incidents:write` | Yes | Yes | — |
-| `incidents:escalate` | Yes | Yes | — |
-| `verifications:trigger` | Yes | Yes | — |
-| `policies:read` | Yes | Yes | Yes |
-| `policies:write` | Yes | — | — |
-| `users:read` | Yes | — | — |
-| `users:write` | Yes | — | — |
-| `company:read` | Yes | — | — |
-| `company:write` | Yes | — | — |
-| `audit:read` | Yes | Yes | — |
+| Permission | Admin | Security Analyst | User | Viewer |
+|---|:---:|:---:|:---:|:---:|
+| `meetings:read` | Yes | Yes | Yes | Yes |
+| `meetings:write` | Yes | — | — | — |
+| `participants:read` | Yes | Yes | Yes | Yes |
+| `incidents:read` | Yes | Yes | Yes | Yes |
+| `incidents:write` | Yes | Yes | — | — |
+| `incidents:escalate` | Yes | Yes | — | — |
+| `verifications:trigger` | Yes | Yes | — | — |
+| `policies:read` | Yes | Yes | Yes | Yes |
+| `policies:write` | Yes | — | — | — |
+| `users:read` | Yes | — | — | — |
+| `users:write` | Yes | — | — | — |
+| `company:read` | Yes | — | — | — |
+| `company:write` | Yes | — | — | — |
+| `audit:read` | Yes | Yes | — | — |
 
 ### 13.4 API Security Controls
 
