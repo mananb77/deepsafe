@@ -362,16 +362,19 @@ class AnalysisPipeline:
         """Dispatch audio analysis to Celery workers."""
         from src.services.stream.tasks.detection_tasks import analyze_audio_task
 
-        task_result = analyze_audio_task.delay(
-            chunk_data=chunk.data,
-            participant_id=chunk.participant_id,
-            meeting_id=chunk.meeting_id,
-            chunk_id=chunk.chunk_id,
-        )
+        def _send_and_get():
+            task_result = analyze_audio_task.delay(
+                chunk_data=chunk.data,
+                participant_id=chunk.participant_id,
+                meeting_id=chunk.meeting_id,
+                chunk_id=chunk.chunk_id,
+            )
+            return task_result.get(timeout=self.config.timeout_seconds)
 
-        result_data = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: task_result.get(timeout=self.config.timeout_seconds),
+        loop = asyncio.get_event_loop()
+        result_data = await asyncio.wait_for(
+            loop.run_in_executor(None, _send_and_get),
+            timeout=self.config.timeout_seconds + 1,
         )
 
         return AnalysisResult(
@@ -500,17 +503,20 @@ class AnalysisPipeline:
         """Dispatch video analysis to Celery workers."""
         from src.services.stream.tasks.detection_tasks import analyze_video_task
 
-        task_result = analyze_video_task.delay(
-            frame_data=frame.data,
-            participant_id=frame.participant_id,
-            meeting_id=frame.meeting_id,
-            width=frame.width,
-            height=frame.height,
-        )
+        def _send_and_get():
+            task_result = analyze_video_task.delay(
+                frame_data=frame.data,
+                participant_id=frame.participant_id,
+                meeting_id=frame.meeting_id,
+                width=frame.width,
+                height=frame.height,
+            )
+            return task_result.get(timeout=self.config.timeout_seconds)
 
-        result_data = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: task_result.get(timeout=self.config.timeout_seconds),
+        loop = asyncio.get_event_loop()
+        result_data = await asyncio.wait_for(
+            loop.run_in_executor(None, _send_and_get),
+            timeout=self.config.timeout_seconds + 1,
         )
 
         return AnalysisResult(
