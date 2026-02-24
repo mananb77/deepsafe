@@ -25,13 +25,17 @@ import { useThemeMode } from '../../context/ThemeContext';
 import { MetricCard } from '../../components/common';
 import { RiskTrendChart, RecentIncidents } from '../../components/features/dashboard';
 import { brandColors } from '../../theme/colors';
-import { dashboardMetrics, riskTrendData, recentIncidents, dateRangePresets } from '../../data';
+import { useDashboardMetrics, useRiskTrends, useRecentIncidents, dateRangePresets } from '../../hooks';
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { isDark } = useThemeMode();
   const [dateRange, setDateRange] = useState('30');
+
+  const { data: dashboardMetrics, isLoading: metricsLoading } = useDashboardMetrics();
+  const { data: riskTrendData } = useRiskTrends();
+  const { data: recentIncidents } = useRecentIncidents();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -102,6 +106,7 @@ export const DashboardPage: React.FC = () => {
       </Box>
 
       {/* Metrics Grid */}
+      {metricsLoading || !dashboardMetrics ? null : (
       <Grid container spacing={3} sx={{ mb: 4 }} data-walkthrough="metrics">
         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
           <Box data-walkthrough="metric-total-meetings" sx={{ height: '100%' }}>
@@ -192,6 +197,7 @@ export const DashboardPage: React.FC = () => {
           />
         </Grid>
       </Grid>
+      )}
 
       {/* Charts Section */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -218,7 +224,7 @@ export const DashboardPage: React.FC = () => {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                 Average risk score over time with critical alerts highlighted
               </Typography>
-              <RiskTrendChart data={riskTrendData} height={320} />
+              <RiskTrendChart data={riskTrendData || []} height={320} />
               <Box
                 sx={{
                   display: 'flex',
@@ -266,7 +272,7 @@ export const DashboardPage: React.FC = () => {
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
           <Box data-walkthrough="incidents">
-            <RecentIncidents incidents={recentIncidents} />
+            <RecentIncidents incidents={recentIncidents || []} />
           </Box>
         </Grid>
       </Grid>

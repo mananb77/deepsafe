@@ -26,7 +26,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useThemeMode } from '../../context/ThemeContext';
 import { TrustBadge, RiskIndicator } from '../../components/common';
 import { brandColors } from '../../theme/colors';
-import { allParticipants, filterParticipants } from '../../data';
+import { useParticipants, allParticipants, filterParticipants } from '../../hooks/useParticipants';
+import { config } from '../../config/env';
 import type { ParticipantStatus } from '../../types';
 
 const getStatusChip = (status: ParticipantStatus, isDark: boolean) => {
@@ -128,13 +129,19 @@ export const ParticipantsPage: React.FC = () => {
 
   const statusColors = isDark ? brandColors.statusDark : brandColors.statusLight;
 
+  // In live mode, fetch from API; in mock mode, use static data
+  const { data: apiParticipants } = useParticipants(
+    config.isLive ? { searchQuery: searchQuery || undefined } : undefined
+  );
+  const participantsSource = config.isLive ? (apiParticipants || []) : allParticipants;
+
   // Apply filters
   const filteredParticipants = useMemo(() => {
-    let participants = filterParticipants(allParticipants, {
+    let participants = config.isLive ? participantsSource : filterParticipants(participantsSource, {
       status: statusFilter !== 'all' ? statusFilter : undefined,
       searchQuery: searchQuery || undefined,
       hasIncidents: searchParams.get('filter') === 'flagged' ? true : undefined,
-    });
+    } as Parameters<typeof filterParticipants>[1]);
 
     // Sort
     participants = [...participants].sort((a, b) => {
@@ -155,7 +162,7 @@ export const ParticipantsPage: React.FC = () => {
     });
 
     return participants;
-  }, [allParticipants, statusFilter, searchQuery, sortBy, searchParams]);
+  }, [participantsSource, statusFilter, searchQuery, sortBy, searchParams]);
 
   // Pagination
   const paginatedParticipants = filteredParticipants.slice(

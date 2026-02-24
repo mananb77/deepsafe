@@ -32,7 +32,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useThemeMode } from '../../context/ThemeContext';
 import { MetricCard, RiskBadge } from '../../components/common';
 import { brandColors } from '../../theme/colors';
-import { allMeetings, filterMeetings } from '../../data';
+import { useMeetings, allMeetings, filterMeetings } from '../../hooks/useMeetings';
+import { config } from '../../config/env';
 
 export const MeetingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -50,15 +51,21 @@ export const MeetingsPage: React.FC = () => {
 
   const statusColors = isDark ? brandColors.statusDark : brandColors.statusLight;
 
+  // In live mode, fetch from API; in mock mode, use static data
+  const { data: apiMeetings } = useMeetings(
+    config.isLive ? { searchQuery: searchQuery || undefined } : undefined
+  );
+  const meetingsSource = config.isLive ? (apiMeetings || []) : allMeetings;
+
   // Apply filters
   const filteredMeetings = useMemo(() => {
-    let meetings = filterMeetings(allMeetings, {
+    let meetings = config.isLive ? meetingsSource : filterMeetings(meetingsSource, {
       startDate,
       endDate,
       riskCategory: riskFilter !== 'all' ? riskFilter : undefined,
       searchQuery: searchQuery || undefined,
       isCompromised: searchParams.get('filter') === 'compromised' ? true : undefined,
-    });
+    } as Parameters<typeof filterMeetings>[1]);
 
     // Sort
     meetings = [...meetings].sort((a, b) => {
@@ -80,7 +87,7 @@ export const MeetingsPage: React.FC = () => {
     });
 
     return meetings;
-  }, [allMeetings, startDate, endDate, riskFilter, searchQuery, sortBy, searchParams]);
+  }, [meetingsSource, startDate, endDate, riskFilter, searchQuery, sortBy, searchParams]);
 
   // Pagination
   const paginatedMeetings = filteredMeetings.slice(

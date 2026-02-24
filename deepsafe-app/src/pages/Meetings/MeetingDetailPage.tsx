@@ -38,7 +38,7 @@ import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useThemeMode } from '../../context/ThemeContext';
 import { RiskBadge, RiskIndicator, TrustBadge } from '../../components/common';
 import { brandColors } from '../../theme/colors';
-import { getMeetingById } from '../../data';
+import { useMeeting } from '../../hooks';
 import type { TimelineEvent, TranscriptEntry } from '../../types';
 
 interface TabPanelProps {
@@ -257,8 +257,16 @@ export const MeetingDetailPage: React.FC = () => {
   const { isDark } = useThemeMode();
   const [tabValue, setTabValue] = useState(0);
 
-  const meeting = getMeetingById(meetingId || '');
+  const { data: meeting, isLoading } = useMeeting(meetingId);
   const statusColors = isDark ? brandColors.statusDark : brandColors.statusLight;
+
+  if (isLoading) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 8 }}>
+        <Typography variant="body1" color="text.secondary">Loading meeting...</Typography>
+      </Box>
+    );
+  }
 
   if (!meeting) {
     return (

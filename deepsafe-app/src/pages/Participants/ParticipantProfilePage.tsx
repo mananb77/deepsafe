@@ -38,7 +38,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useThemeMode } from '../../context/ThemeContext';
 import { TrustBadge, RiskIndicator } from '../../components/common';
 import { brandColors } from '../../theme/colors';
-import { getParticipantById } from '../../data';
+import { useParticipant } from '../../hooks';
 import type { ParticipantStatus } from '../../types';
 
 const getStatusChip = (status: ParticipantStatus, isDark: boolean) => {
@@ -135,8 +135,16 @@ export const ParticipantProfilePage: React.FC = () => {
   const { isDark } = useThemeMode();
   const { participantId } = useParams<{ participantId: string }>();
 
-  const participant = participantId ? getParticipantById(participantId) : undefined;
+  const { data: participant, isLoading } = useParticipant(participantId);
   const statusColors = isDark ? brandColors.statusDark : brandColors.statusLight;
+
+  if (isLoading) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 8 }}>
+        <Typography variant="body1" color="text.secondary">Loading participant...</Typography>
+      </Box>
+    );
+  }
 
   if (!participant) {
     return (
