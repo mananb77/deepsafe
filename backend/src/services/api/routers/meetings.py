@@ -444,6 +444,88 @@ async def end_meeting(
     return MeetingResponse.model_validate(meeting)
 
 
+@router.post("/{meeting_id}/join-bot", response_model=SuccessResponse)
+async def join_bot(
+    meeting_id: str,
+    session: AsyncSessionDep,
+    user: CurrentUserDep,
+):
+    """
+    Deploy a bot to join the meeting and start monitoring.
+
+    Launches the appropriate platform bot (Zoom/Google Meet)
+    based on the meeting's platform.
+    """
+    result = await session.execute(
+        select(Meeting).where(Meeting.id == meeting_id)
+    )
+    meeting = result.scalar_one_or_none()
+
+    if not meeting:
+        raise NotFoundError("Meeting", meeting_id)
+
+    if meeting.company_id != user.company_id:
+        raise AuthorizationError("Access denied to this meeting")
+
+    if meeting.bot_joined:
+        return SuccessResponse(message="Bot already in meeting")
+
+    # Mark bot as joining
+    meeting.bot_joined = True
+    meeting.bot_joined_at = datetime.utcnow()
+
+    # Start the meeting if not already
+    if meeting.status == MeetingStatus.SCHEDULED:
+        meeting.start()
+
+    await session.commit()
+    await session.refresh(meeting)
+
+    # TODO: Dispatch Celery task to actually start the bot
+    # from src.shared.messaging.tasks import start_meeting_bot
+    # start_meeting_bot.delay(str(meeting.id), meeting.platform.value, meeting.platform_meeting_url)
+
+    return SuccessResponse(
+        message=f"Bot deployment initiated for {meeting.platform.value} meeting"
+    )
+
+
+@router.post("/{meeting_id}/leave-bot", response_model=SuccessResponse)
+async def leave_bot(
+    meeting_id: str,
+    session: AsyncSessionDep,
+    user: CurrentUserDep,
+):
+    """
+    Remove the bot from the meeting.
+    """
+    result = await session.execute(
+        select(Meeting).where(Meeting.id == meeting_id)
+    )
+    meeting = result.scalar_one_or_none()
+
+    if not meeting:
+        raise NotFoundError("Meeting", meeting_id)
+
+    if meeting.company_id != user.company_id:
+        raise AuthorizationError("Access denied to this meeting")
+
+    if not meeting.bot_joined:
+        return SuccessResponse(message="Bot is not in this meeting")
+
+    meeting.bot_joined = False
+    meeting.bot_left_at = datetime.utcnow()
+
+    await session.commit()
+    await session.refresh(meeting)
+
+    # TODO: Dispatch Celery task to stop the bot
+    # from src.shared.messaging.tasks import stop_meeting_bot
+    # stop_meeting_bot.delay(str(meeting.id))
+
+    return SuccessResponse(message="Bot removal initiated")
+
+
 @router.get("/{meeting_id}/transcript")
 async def get_meeting_transcript(
     meeting_id: str,
