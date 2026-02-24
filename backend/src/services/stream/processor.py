@@ -9,6 +9,7 @@ Target: <5 second end-to-end latency from frame capture to alert.
 
 import asyncio
 import logging
+import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -77,7 +78,7 @@ class StreamProcessorConfig:
     # Analysis toggles
     enable_audio_analysis: bool = True
     enable_video_analysis: bool = True
-    use_mock_analysis: bool = True
+    use_mock_analysis: bool = field(default_factory=lambda: os.getenv("USE_MOCK_ANALYSIS", "true").lower() == "true")
 
     # Alert settings
     alert_cooldown_seconds: float = 30.0  # Min time between similar alerts
