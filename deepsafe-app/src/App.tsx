@@ -14,6 +14,8 @@ import { SupportPage, ArticlePage } from './pages/Support';
 import { DemoPage, DemoProvider } from './pages/Demo';
 import { WelcomeSplashPage } from './pages/Welcome';
 import { WalkthroughProvider } from './features/Walkthrough';
+import { LoginPage } from './pages/Login/LoginPage';
+import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -37,6 +39,9 @@ const App: React.FC = () => {
             {/* Landing Page - Portfolio showcase */}
             <Route path="/" element={<LandingPage />} />
 
+            {/* Login Page - Only needed in live mode */}
+            <Route path="/login" element={<LoginPage />} />
+
             {/* Demo Route - Outside MainLayout for full-screen experience */}
             <Route
               path="demo"
@@ -51,9 +56,11 @@ const App: React.FC = () => {
             <Route
               path="/app/welcome"
               element={
-                <WalkthroughProvider>
-                  <WelcomeSplashPage />
-                </WalkthroughProvider>
+                <ProtectedRoute>
+                  <WalkthroughProvider>
+                    <WelcomeSplashPage />
+                  </WalkthroughProvider>
+                </ProtectedRoute>
               }
             />
 
@@ -61,9 +68,11 @@ const App: React.FC = () => {
             <Route
               path="/app"
               element={
-                <WalkthroughProvider>
-                  <MainLayout />
-                </WalkthroughProvider>
+                <ProtectedRoute>
+                  <WalkthroughProvider>
+                    <MainLayout />
+                  </WalkthroughProvider>
+                </ProtectedRoute>
               }
             >
               {/* Dashboard - Default app route */}
