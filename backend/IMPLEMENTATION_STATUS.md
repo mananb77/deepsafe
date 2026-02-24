@@ -1,6 +1,6 @@
 # DeepSafe Backend Implementation Status
 
-**Last Updated:** 2024-12-17 17:30 PST
+**Last Updated:** 2026-02-23
 **Current Phase:** Phase 6 - Stream Processing Pipeline
 
 ---
@@ -59,6 +59,58 @@
 **Current Issue Being Fixed:**
 - Fixed `calculate_combined_risk()` in `orchestrator.py` to return `float` instead of `None`
 - Need to run tests again to verify fix
+
+### Local ML Models Toggle (Phase 6b) ✅
+
+**Detection Mode System** — controlled by `DETECTION_MODE` env var (`local`, `api`, `hybrid`).
+
+**New Files Created:**
+- `src/services/detection/audio/wav2vec_detector.py` — Wav2Vec2 local audio deepfake detector
+- `src/services/detection/audio/whisper_transcriber.py` — Local Whisper transcription
+- `src/services/detection/video/efficientnet_detector.py` — EfficientNet-B4 local video deepfake detector
+- `src/services/detection/social_engineering/ollama_analyzer.py` — Ollama local LLM for social engineering analysis
+- `src/services/detection/social_engineering/prompts.py` — Shared prompts (used by GPT4Analyzer and OllamaAnalyzer)
+- `src/services/detection/factory.py` — Detector factory (creates detectors based on mode)
+- `src/migrations/versions/20260223_000001_add_indicator_source_values.py` — Adds OLLAMA_LLM and WHISPER enum values
+
+**Modified Files:**
+- `src/shared/config/settings.py` — Added `DetectionMode` enum and local model settings
+- `src/services/detection/audio/detector.py` — Added `enable_local` + `local_audio_detector` + hybrid fallback
+- `src/services/detection/video/detector.py` — Added `enable_local` + `local_video_detector` + hybrid fallback
+- `src/services/detection/social_engineering/detector.py` — Added `enable_local_llm` + `local_llm_analyzer` + hybrid fallback
+- `src/services/detection/social_engineering/gpt4_analyzer.py` — Imports shared prompts
+- `src/services/stream/pipeline/orchestrator.py` — Added `detection_mode` to PipelineConfig, factory-based init
+- `src/services/stream/processor.py` — Added `detection_mode` to StreamProcessorConfig
+- `src/shared/models/risk_indicator.py` — Added `OLLAMA_LLM` and `WHISPER` to IndicatorSource
+- `pyproject.toml` — Added `faster-whisper`, `torchvision`, `Pillow` to ML deps
+- `docker-compose.yml` — Added `DETECTION_MODE=local` to services
+- `.env.example` — Added detection mode env vars
+
+**Tests:**
+- `tests/unit/detection/audio/test_wav2vec_detector.py`
+- `tests/unit/detection/video/test_efficientnet_detector.py`
+- `tests/unit/detection/social_engineering/test_ollama_analyzer.py`
+- `tests/unit/detection/audio/test_whisper_transcriber.py`
+- `tests/unit/detection/test_factory.py`
+
+**Usage:**
+```bash
+# Local mode (free, $0/month)
+DETECTION_MODE=local python -m uvicorn src.services.api.main:app
+
+# API mode (paid services)
+DETECTION_MODE=api RESEMBLE_API_KEY=... python -m uvicorn src.services.api.main:app
+
+# Hybrid mode (API with local fallback)
+DETECTION_MODE=hybrid python -m uvicorn src.services.api.main:app
+```
+
+**Ollama Setup (for local LLM social engineering analysis):**
+```bash
+# Install Ollama from https://ollama.ai
+ollama pull phi3:mini
+ollama serve  # runs on localhost:11434
+```
 
 ---
 

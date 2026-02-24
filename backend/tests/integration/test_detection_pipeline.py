@@ -141,13 +141,20 @@ class TestFullDetectionPipeline:
         config = PipelineConfig(use_mock_analysis=True)
         pipeline = AnalysisPipeline(meeting_id="test-meeting", config=config)
 
+        from datetime import datetime
+        now = datetime.utcnow()
         chunk = AudioChunk(
             data=b"audio_data_here",
             participant_id="p1",
             meeting_id="test-meeting",
             sample_rate=16000,
+            channels=1,
+            bits_per_sample=16,
             duration_ms=3000,
             chunk_id="chunk-1",
+            start_time=now,
+            end_time=now,
+            sequence_number=1,
         )
 
         result = await pipeline.analyze_audio(chunk)

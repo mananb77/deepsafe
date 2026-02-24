@@ -78,6 +78,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await get_mongodb()
         logger.info("Database connections established")
 
+        # Initialize alert dispatch pipeline
+        try:
+            from src.services.stream.alert_generator import AlertDispatcher
+            from src.services.stream.alert_handlers import setup_alert_handlers
+
+            alert_dispatcher = AlertDispatcher()
+            setup_alert_handlers(alert_dispatcher)
+            app.state.alert_dispatcher = alert_dispatcher
+            logger.info("Alert dispatch pipeline initialized")
+        except Exception as e:
+            logger.warning("Alert dispatch pipeline initialization failed", error=str(e))
+
         yield
 
     finally:

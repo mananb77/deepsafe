@@ -64,6 +64,8 @@ class IndicatorSource(str, Enum):
     # Internal Models
     WAV2VEC = "wav2vec"
     EFFICIENTNET = "efficientnet"
+    OLLAMA_LLM = "ollama_llm"
+    WHISPER = "whisper"
     CUSTOM_MODEL = "custom_model"
 
     # Rule-based

@@ -80,6 +80,9 @@ class StreamProcessorConfig:
     enable_video_analysis: bool = True
     use_mock_analysis: bool = field(default_factory=lambda: os.getenv("USE_MOCK_ANALYSIS", "true").lower() == "true")
 
+    # Detection mode: "local", "api", or "hybrid"
+    detection_mode: str = field(default_factory=lambda: os.getenv("DETECTION_MODE", "local"))
+
     # Alert settings
     alert_cooldown_seconds: float = 30.0  # Min time between similar alerts
 
@@ -205,6 +208,7 @@ class StreamProcessor:
             use_mock_analysis=self.config.use_mock_analysis,
             enable_audio_analysis=self.config.enable_audio_analysis,
             enable_video_analysis=self.config.enable_video_analysis,
+            detection_mode=self.config.detection_mode,
         )
         self._pipeline = AnalysisPipeline(
             meeting_id=meeting_id,

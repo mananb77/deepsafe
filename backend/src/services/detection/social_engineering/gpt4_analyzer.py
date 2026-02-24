@@ -15,6 +15,10 @@ import json
 import httpx
 
 from src.shared.config import get_settings
+from src.services.detection.social_engineering.prompts import (
+    SYSTEM_PROMPT,
+    build_analysis_prompt,
+)
 
 
 @dataclass
@@ -43,28 +47,6 @@ class GPT4Analyzer:
 
     Weight: 20% of total social engineering score
     """
-
-    SYSTEM_PROMPT = """You are a security analyst specializing in detecting social engineering attacks in business communications. Your role is to analyze conversation transcripts and identify potential threats.
-
-Analyze the provided conversation for:
-1. Social engineering tactics (urgency, authority, reciprocity, scarcity, social proof)
-2. Business Email Compromise (BEC) indicators
-3. Fraudulent intent (payment redirect, credential theft, data exfiltration)
-4. Manipulation techniques (emotional manipulation, pressure tactics)
-5. Impersonation attempts
-
-Respond with a JSON object containing:
-{
-    "is_suspicious": boolean,
-    "confidence": number (0-100),
-    "intent_classification": string (legitimate|suspicious|malicious|unknown),
-    "manipulation_tactics": [list of identified tactics],
-    "risk_assessment": string (low|medium|high|critical),
-    "reasoning": string (explanation of analysis),
-    "recommendations": [list of recommended actions]
-}
-
-Be thorough but avoid false positives. Consider business context and normal communication patterns."""
 
     def __init__(
         self,
@@ -120,7 +102,7 @@ Be thorough but avoid false positives. Consider business context and normal comm
             )
 
         # Build analysis prompt
-        user_prompt = self._build_prompt(transcript, meeting_context, participant_info)
+        user_prompt = build_analysis_prompt(transcript, meeting_context, participant_info)
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -133,7 +115,7 @@ Be thorough but avoid false positives. Consider business context and normal comm
                     json={
                         "model": self.model,
                         "messages": [
-                            {"role": "system", "content": self.SYSTEM_PROMPT},
+                            {"role": "system", "content": SYSTEM_PROMPT},
                             {"role": "user", "content": user_prompt},
                         ],
                         "temperature": 0.3,  # Lower temperature for more consistent analysis
@@ -171,37 +153,6 @@ Be thorough but avoid false positives. Consider business context and normal comm
             return self._create_error_result(f"JSON parse error: {e}")
         except Exception as e:
             return self._create_error_result(str(e))
-
-    def _build_prompt(
-        self,
-        transcript: str,
-        meeting_context: Optional[Dict[str, Any]],
-        participant_info: Optional[Dict[str, Any]],
-    ) -> str:
-        """Build the analysis prompt with context."""
-        parts = ["Analyze the following conversation for social engineering indicators:"]
-
-        # Add context if available
-        if meeting_context:
-            parts.append(f"\n\nMeeting Context:")
-            if meeting_context.get("title"):
-                parts.append(f"- Title: {meeting_context['title']}")
-            if meeting_context.get("scheduled"):
-                parts.append(f"- Scheduled: {meeting_context['scheduled']}")
-            if meeting_context.get("organizer"):
-                parts.append(f"- Organizer: {meeting_context['organizer']}")
-
-        if participant_info:
-            parts.append(f"\n\nParticipant Information:")
-            for name, info in participant_info.items():
-                parts.append(f"- {name}: {info}")
-
-        # Add transcript
-        parts.append(f"\n\nConversation Transcript:\n```\n{transcript}\n```")
-
-        parts.append("\n\nProvide your analysis in JSON format.")
-
-        return "\n".join(parts)
 
     def _create_error_result(self, error: str) -> GPT4AnalysisResult:
         """Create an error result."""

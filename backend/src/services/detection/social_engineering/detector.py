@@ -18,7 +18,7 @@ Risk Categories:
 
 import asyncio
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from src.services.detection.base import (
     BaseDetector,
@@ -32,6 +32,9 @@ from src.services.detection.social_engineering.scenario_detector import (
 )
 from src.services.detection.social_engineering.keyword_analyzer import KeywordAnalyzer
 from src.services.detection.social_engineering.gpt4_analyzer import GPT4Analyzer
+
+if TYPE_CHECKING:
+    from src.services.detection.social_engineering.ollama_analyzer import OllamaAnalyzer
 from src.services.detection.social_engineering.participant_validator import (
     ParticipantValidator,
     ParticipantProfile,
@@ -92,14 +95,23 @@ class SocialEngineeringDetector(BaseDetector):
         company_domain: Optional[str] = None,
         company_timezone: str = "America/New_York",
         enable_gpt4: bool = True,
+        local_llm_analyzer: Optional["OllamaAnalyzer"] = None,
+        enable_local_llm: bool = False,
     ):
         self.scenario_detector = ScenarioDetector()
         self.keyword_analyzer = KeywordAnalyzer()
-        self.gpt4_analyzer = gpt4_analyzer or GPT4Analyzer()
+        if gpt4_analyzer is not None:
+            self.gpt4_analyzer = gpt4_analyzer
+        elif enable_gpt4:
+            self.gpt4_analyzer = GPT4Analyzer()
+        else:
+            self.gpt4_analyzer = None
         self.participant_validator = ParticipantValidator(company_domain=company_domain)
         self.metadata_analyzer = MetadataAnalyzer(company_timezone=company_timezone)
         self.behavioral_analyzer = BehavioralAnalyzer()
         self.enable_gpt4 = enable_gpt4
+        self.local_llm_analyzer = local_llm_analyzer
+        self.enable_local_llm = enable_local_llm
 
     @property
     def name(self) -> str:
@@ -148,6 +160,8 @@ class SocialEngineeringDetector(BaseDetector):
         # GPT-4 analysis (if enabled)
         if self.enable_gpt4:
             tasks.append(self._run_gpt4_analysis(transcript, meeting_context, participants))
+        elif self.enable_local_llm and self.local_llm_analyzer:
+            tasks.append(self._run_local_llm_analysis(transcript, meeting_context, participants))
 
         # Participant validation (if participants provided)
         if participants:
@@ -179,6 +193,21 @@ class SocialEngineeringDetector(BaseDetector):
                 errors.append(str(result))
             elif isinstance(result, dict):
                 results.update(result)
+
+        # Hybrid fallback: if GPT-4 was tried but failed, try local LLM
+        if (
+            self.enable_gpt4
+            and self.enable_local_llm
+            and self.local_llm_analyzer
+            and not results.get("gpt4_used", False)
+        ):
+            try:
+                local_result = await self._run_local_llm_analysis(
+                    transcript, meeting_context, participants
+                )
+                results.update(local_result)
+            except Exception:
+                pass
 
         # Calculate combined score
         combined_score, method_scores, risk_category = self._calculate_combined_score(results)
@@ -288,6 +317,48 @@ class SocialEngineeringDetector(BaseDetector):
                 }
 
             result = await self.gpt4_analyzer.analyze(
+                transcript,
+                meeting_context=context,
+                participant_info=participant_info,
+            )
+
+            if result.details.get("error"):
+                return {
+                    "gpt4_error": result.details["error"],
+                    "gpt4_used": False,
+                }
+
+            return {
+                "gpt4": {
+                    "is_suspicious": result.is_suspicious,
+                    "confidence": result.confidence,
+                    "intent": result.intent_classification,
+                    "manipulation_tactics": result.manipulation_tactics,
+                    "risk_assessment": result.risk_assessment,
+                    "reasoning": result.reasoning,
+                    "recommendations": result.recommendations,
+                },
+                "gpt4_used": True,
+            }
+        except Exception as e:
+            return {"gpt4_error": str(e), "gpt4_used": False}
+
+    async def _run_local_llm_analysis(
+        self,
+        transcript: str,
+        context: Optional[Dict[str, Any]],
+        participants: Optional[List[ParticipantProfile]],
+    ) -> Dict[str, Any]:
+        """Run local LLM analysis via Ollama (same result keys as GPT-4)."""
+        try:
+            participant_info = None
+            if participants:
+                participant_info = {
+                    p.name: f"{p.claimed_role or 'Unknown role'} ({p.email or 'No email'})"
+                    for p in participants
+                }
+
+            result = await self.local_llm_analyzer.analyze(
                 transcript,
                 meeting_context=context,
                 participant_info=participant_info,

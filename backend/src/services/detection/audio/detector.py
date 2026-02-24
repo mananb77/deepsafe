@@ -6,12 +6,12 @@ Main detector combining multiple analysis methods:
 - Spectral analysis (weight: 0.25)
 - Prosody analysis (weight: 0.20)
 - Audio-video sync (weight: 0.20)
-- Wav2Vec fallback when API unavailable
+- Wav2Vec local model fallback when API unavailable
 """
 
 import asyncio
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from src.services.detection.base import (
     AudioChunk,
@@ -26,6 +26,9 @@ from src.services.detection.audio.spectral_analyzer import SpectralAnalyzer
 from src.services.detection.audio.prosody_analyzer import ProsodyAnalyzer
 from src.services.detection.audio.av_sync_detector import AVSyncDetector
 
+if TYPE_CHECKING:
+    from src.services.detection.audio.wav2vec_detector import Wav2VecDetector
+
 
 class AudioDeepfakeDetector(BaseDetector):
     """
@@ -36,6 +39,7 @@ class AudioDeepfakeDetector(BaseDetector):
     2. Spectral Analysis - Frequency-domain artifact detection
     3. Prosody Analysis - Speech rhythm and intonation analysis
     4. A/V Sync Detection - Lip sync verification (42ms threshold)
+    5. Wav2Vec2 - Local ML model (when enable_local=True)
 
     Score weights:
     - Resemble AI: 35%
@@ -61,12 +65,21 @@ class AudioDeepfakeDetector(BaseDetector):
         self,
         resemble_client: Optional[ResembleAIClient] = None,
         enable_api: bool = True,
+        local_audio_detector: Optional["Wav2VecDetector"] = None,
+        enable_local: bool = False,
     ):
-        self.resemble_client = resemble_client or ResembleAIClient()
+        if resemble_client is not None:
+            self.resemble_client = resemble_client
+        elif enable_api:
+            self.resemble_client = ResembleAIClient()
+        else:
+            self.resemble_client = None
         self.spectral_analyzer = SpectralAnalyzer()
         self.prosody_analyzer = ProsodyAnalyzer()
         self.av_sync_detector = AVSyncDetector()
         self.enable_api = enable_api
+        self.local_audio_detector = local_audio_detector
+        self.enable_local = enable_local
         self._api_available: Optional[bool] = None
 
     @property
@@ -107,6 +120,8 @@ class AudioDeepfakeDetector(BaseDetector):
         # Add Resemble AI if enabled and potentially available
         if self.enable_api:
             tasks.append(self._run_resemble_analysis(audio))
+        elif self.enable_local and self.local_audio_detector:
+            tasks.append(self._run_wav2vec_analysis(audio))
 
         # Add A/V sync if video data available
         if video_frames or lip_positions:
@@ -121,6 +136,19 @@ class AudioDeepfakeDetector(BaseDetector):
                 errors.append(str(result))
             elif isinstance(result, dict):
                 results.update(result)
+
+        # Hybrid fallback: if API was tried but failed, try local model
+        if (
+            self.enable_api
+            and self.enable_local
+            and self.local_audio_detector
+            and not results.get("resemble_used", False)
+        ):
+            try:
+                local_result = await self._run_wav2vec_analysis(audio)
+                results.update(local_result)
+            except Exception:
+                pass
 
         # Calculate combined score
         combined_score, method_scores = self._calculate_combined_score(results)
@@ -168,6 +196,28 @@ class AudioDeepfakeDetector(BaseDetector):
                     "is_synthetic": result.get("is_synthetic", False),
                     "confidence": result.get("confidence", 0.0),
                     "model_detected": result.get("model_detected"),
+                },
+                "resemble_used": True,
+            }
+        except Exception as e:
+            return {"resemble_error": str(e), "resemble_used": False}
+
+    async def _run_wav2vec_analysis(self, audio: AudioChunk) -> Dict[str, Any]:
+        """Run local Wav2Vec analysis (same result keys as Resemble for weight compatibility)."""
+        try:
+            result = await self.local_audio_detector.analyze(
+                audio.data,
+                sample_rate=audio.sample_rate,
+            )
+
+            if result.get("error"):
+                return {"resemble_error": result["error"], "resemble_used": False}
+
+            return {
+                "resemble": {
+                    "is_synthetic": result.get("is_synthetic", False),
+                    "confidence": result.get("confidence", 0.0),
+                    "model_detected": result.get("model"),
                 },
                 "resemble_used": True,
             }

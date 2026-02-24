@@ -60,6 +60,9 @@ class PipelineConfig:
     # Fallback settings
     use_mock_analysis: bool = True
 
+    # Detection mode: "local", "api", or "hybrid"
+    detection_mode: str = "local"
+
     # Configurable risk weights (must sum to ~1.0)
     audio_deepfake_weight: float = 0.25
     video_deepfake_weight: float = 0.25
@@ -262,8 +265,19 @@ class AnalysisPipeline:
         logger.info("Analysis pipeline stopped")
 
     async def _initialize_services(self) -> None:
-        """Initialize detection services."""
-        pass
+        """Initialize detection services based on detection mode."""
+        try:
+            from src.services.detection.factory import create_detectors
+            from src.shared.config.settings import DetectionMode
+
+            mode = DetectionMode(self.config.detection_mode)
+            audio, video, social = create_detectors(mode)
+            self._audio_detector = audio
+            self._video_detector = video
+            self._social_engineering_detector = social
+            logger.info(f"Detection services initialized in '{mode.value}' mode")
+        except Exception as e:
+            logger.warning(f"Failed to initialize detection services: {e}")
 
     # ==================== Audio Analysis ====================
 

@@ -5,11 +5,20 @@ Centralized configuration using Pydantic Settings with environment variable supp
 All settings can be overridden via environment variables or .env files.
 """
 
+from enum import Enum
 from functools import lru_cache
 from typing import List, Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class DetectionMode(str, Enum):
+    """Detection mode controlling local vs API model usage."""
+
+    LOCAL = "local"
+    API = "api"
+    HYBRID = "hybrid"
 
 
 class DatabaseSettings(BaseSettings):
@@ -176,6 +185,17 @@ class DetectionSettings(BaseSettings):
     """Detection engine configuration."""
 
     model_config = SettingsConfigDict(env_prefix="DETECTION_")
+
+    # Detection mode: local, api, or hybrid
+    mode: DetectionMode = Field(default=DetectionMode.LOCAL)
+
+    # Local model settings
+    audio_model: str = Field(default="facebook/wav2vec2-base")
+    video_model: str = Field(default="google/efficientnet-b4")
+    ollama_model: str = Field(default="phi3:mini")
+    ollama_url: str = Field(default="http://localhost:11434")
+    whisper_model_size: str = Field(default="small")
+    local_device: str = Field(default="cpu")
 
     # Risk score thresholds
     low_risk_threshold: int = Field(default=30, ge=0, le=100)

@@ -12,7 +12,7 @@ Main detector combining multiple analysis methods:
 
 import asyncio
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from src.services.detection.base import (
     BaseDetector,
@@ -22,6 +22,9 @@ from src.services.detection.base import (
     VideoFrame,
 )
 from src.services.detection.video.sensity_client import SensityClient
+
+if TYPE_CHECKING:
+    from src.services.detection.video.efficientnet_detector import EfficientNetDetector
 from src.services.detection.video.facial_landmark_detector import (
     FacialLandmarkDetector,
     FacialLandmarks,
@@ -72,22 +75,31 @@ class VideoDeepfakeDetector(BaseDetector):
     # Fallback weights (without API)
     FALLBACK_WEIGHT_LANDMARKS = 0.30
     FALLBACK_WEIGHT_MICRO_EXPRESSION = 0.30
-    FALLBACK_WEIGHT_LIGHTING = 0.25
-    FALLBACK_WEIGHT_VIRTUAL_CAMERA = 0.15
+    FALLBACK_WEIGHT_LIGHTING = 0.20
+    FALLBACK_WEIGHT_VIRTUAL_CAMERA = 0.20
 
     def __init__(
         self,
         sensity_client: Optional[SensityClient] = None,
         enable_api: bool = True,
         fps: float = 30.0,
+        local_video_detector: Optional["EfficientNetDetector"] = None,
+        enable_local: bool = False,
     ):
-        self.sensity_client = sensity_client or SensityClient()
+        if sensity_client is not None:
+            self.sensity_client = sensity_client
+        elif enable_api:
+            self.sensity_client = SensityClient()
+        else:
+            self.sensity_client = None
         self.landmark_detector = FacialLandmarkDetector()
         self.micro_expression_analyzer = MicroExpressionAnalyzer(fps=fps)
         self.lighting_analyzer = LightingAnalyzer()
         self.virtual_camera_detector = VirtualCameraDetector()
         self.enable_api = enable_api
         self.fps = fps
+        self.local_video_detector = local_video_detector
+        self.enable_local = enable_local
         self._api_available: Optional[bool] = None
 
     @property
@@ -131,6 +143,8 @@ class VideoDeepfakeDetector(BaseDetector):
         # Sensity API analysis (if enabled)
         if self.enable_api and frames:
             tasks.append(self._run_sensity_analysis(frames))
+        elif self.enable_local and self.local_video_detector and frames:
+            tasks.append(self._run_efficientnet_analysis(frames))
 
         # Facial landmark analysis
         if landmarks_sequence:
@@ -159,6 +173,20 @@ class VideoDeepfakeDetector(BaseDetector):
                     errors.append(str(result))
                 elif isinstance(result, dict):
                     results.update(result)
+
+        # Hybrid fallback: if API was tried but failed, try local model
+        if (
+            self.enable_api
+            and self.enable_local
+            and self.local_video_detector
+            and frames
+            and not results.get("sensity_used", False)
+        ):
+            try:
+                local_result = await self._run_efficientnet_analysis(frames)
+                results.update(local_result)
+            except Exception:
+                pass
 
         # Calculate combined score
         combined_score, method_scores = self._calculate_combined_score(results)
@@ -207,6 +235,38 @@ class VideoDeepfakeDetector(BaseDetector):
             result = await self.sensity_client.analyze_video(
                 frame_bytes,
                 sample_rate=5,  # Analyze every 5th frame
+            )
+
+            if result.get("error"):
+                return {"sensity_error": result["error"], "sensity_used": False}
+
+            return {
+                "sensity": {
+                    "is_deepfake": result.get("is_deepfake", False),
+                    "confidence": result.get("confidence", 0.0),
+                    "manipulation_types": result.get("manipulation_types", []),
+                    "frames_with_deepfake": result.get("frames_with_deepfake", 0),
+                    "frames_analyzed": result.get("frames_analyzed", 0),
+                },
+                "sensity_used": True,
+            }
+        except Exception as e:
+            return {"sensity_error": str(e), "sensity_used": False}
+
+    async def _run_efficientnet_analysis(
+        self,
+        frames: List[VideoFrame],
+    ) -> Dict[str, Any]:
+        """Run local EfficientNet analysis (same result keys as Sensity for weight compatibility)."""
+        try:
+            frame_bytes = [f.data for f in frames if f.data]
+
+            if not frame_bytes:
+                return {"sensity_error": "No frame data", "sensity_used": False}
+
+            result = await self.local_video_detector.analyze_video(
+                frame_bytes,
+                sample_rate=5,
             )
 
             if result.get("error"):
