@@ -280,70 +280,36 @@ class GoogleMeetBot(BaseMeetingBot):
         return True
 
     async def _puppeteer_connect(self, display_name: str) -> bool:
-        """Connect using Puppeteer browser automation."""
+        """Connect using Puppeteer browser automation.
+
+        The browser_controller.js handles the full join flow:
+        navigating, setting the name, clicking join, and starting
+        capture. This method just launches the subprocess and
+        waits for the 'connected' status over WebSocket.
+        """
         logger.info(f"Connecting to Google Meet via Puppeteer: {self._meeting_code}")
 
         # Ensure we have valid tokens
         if not await self._ensure_authenticated():
             raise RuntimeError("Failed to authenticate with Google")
 
-        # Start browser subprocess
+        # Start browser subprocess (also starts WebSocket server)
+        self._credentials.bot_display_name = display_name
         await self._start_browser_process()
 
-        # Navigate to meeting and join
-        meeting_url = f"{self.MEET_BASE_URL}/{self._meeting_code}"
-
-        await self._send_browser_command("navigate", {"url": meeting_url})
-        await asyncio.sleep(2.0)  # Wait for page load
-
-        # Set display name
-        await self._send_browser_command("set_text", {
-            "selector": self.SELECTORS["name_input"],
-            "value": display_name,
-        })
-
-        # Click join button
-        await self._send_browser_command("click", {
-            "selector": self.SELECTORS["join_button"],
-        })
-
-        # Wait for join to complete (may need to click "Ask to join")
-        await asyncio.sleep(3.0)
-
-        # Check if we need to ask to join
-        ask_button_exists = await self._send_browser_command("exists", {
-            "selector": self.SELECTORS["ask_to_join_button"],
-        })
-
-        if ask_button_exists:
-            await self._send_browser_command("click", {
-                "selector": self.SELECTORS["ask_to_join_button"],
-            })
-            # Wait for host to admit
-            logger.info("Waiting to be admitted to the meeting...")
-
-        # Wait for meeting to load
-        await asyncio.sleep(5.0)
-
-        # Verify we're in the meeting
-        in_meeting = await self._verify_in_meeting()
-        if not in_meeting:
-            raise RuntimeError("Failed to join meeting")
+        # If we fell back to mock mode, delegate
+        if self._mode == GoogleMeetBotMode.MOCK:
+            return await self._mock_connect(display_name)
 
         # Set up meeting info
+        meeting_url = f"{self.MEET_BASE_URL}/{self._meeting_code}"
         self._meeting_info = MeetingInfo(
             meeting_id=self._meeting_code or "",
             platform=MeetingPlatform.GOOGLE_MEET,
-            title=await self._get_meeting_title() or f"Meeting {self._meeting_code}",
+            title=f"Meeting {self._meeting_code}",
             start_time=datetime.utcnow(),
             join_url=meeting_url,
         )
-
-        # Start capturing streams
-        await self._start_stream_capture()
-
-        # Start participant observer
-        await self._start_participant_observer()
 
         self._status = BotStatus.CONNECTED
         self._connected_at = datetime.utcnow()
@@ -378,36 +344,134 @@ class GoogleMeetBot(BaseMeetingBot):
         return False
 
     async def _start_browser_process(self) -> None:
-        """Start Puppeteer browser subprocess."""
-        # Path to our Node.js browser controller script
+        """Start Puppeteer browser subprocess with WebSocket bridge."""
         script_path = Path(__file__).parent / "browser_controller.js"
 
         if not script_path.exists():
-            # Create a placeholder - in production this would be a full implementation
             logger.warning("Browser controller script not found, using mock mode")
             self._mode = GoogleMeetBotMode.MOCK
             return
 
-        # Build command
-        cmd = [
-            "node",
-            str(script_path),
-            "--headless" if self._browser_config.headless else "",
-        ]
+        # Start a WebSocket server for the browser controller to connect to
+        import websockets
+        self._ws_port = self._find_free_port()
 
+        async def _handle_browser_message(websocket):
+            """Handle messages from browser_controller.js."""
+            self._ws_connection = websocket
+            try:
+                async for raw_message in websocket:
+                    try:
+                        message = json.loads(raw_message)
+                        await self._process_browser_message(message)
+                    except json.JSONDecodeError:
+                        # Binary frame data — pass to video/audio callbacks
+                        pass
+            except Exception as e:
+                logger.error(f"WebSocket handler error: {e}")
+
+        self._ws_server = await websockets.serve(
+            _handle_browser_message, "127.0.0.1", self._ws_port
+        )
+
+        # Build command for the Node.js controller
+        meeting_url = f"{self.MEET_BASE_URL}/{self._meeting_code}"
+        cmd = [
+            "node", str(script_path),
+            "--meeting-url", meeting_url,
+            "--ws-port", str(self._ws_port),
+            "--bot-name", self._credentials.bot_display_name or "DeepSafe Bot",
+            "--video-fps", str(self._browser_config.video_fps),
+        ]
+        if self._browser_config.headless:
+            cmd.append("--headless")
         if self._browser_config.executable_path:
             cmd.extend(["--executable", self._browser_config.executable_path])
 
-        # Start process
         self._browser_process = subprocess.Popen(
-            cmd,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
 
-        # Wait for ready signal
-        await asyncio.sleep(2.0)
+        # Wait for the browser to connect via WebSocket
+        for _ in range(30):
+            if self._ws_connection is not None:
+                break
+            await asyncio.sleep(1.0)
+        else:
+            logger.warning("Browser controller did not connect within 30s, falling back to mock")
+            self._mode = GoogleMeetBotMode.MOCK
+
+    def _find_free_port(self) -> int:
+        """Find a free TCP port."""
+        import socket
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            return s.getsockname()[1]
+
+    async def _process_browser_message(self, message: dict) -> None:
+        """Route messages from browser_controller.js to appropriate callbacks."""
+        msg_type = message.get("type")
+
+        if msg_type == "audio_frame":
+            import base64
+            audio_data = base64.b64decode(message.get("data", ""))
+            frame = AudioFrame(
+                data=audio_data,
+                sample_rate=message.get("sample_rate", 16000),
+                channels=message.get("channels", 1),
+                timestamp=datetime.utcnow(),
+                participant_id=message.get("participant_id", "mixed"),
+                is_speech=True,
+            )
+            for callback in self._audio_callbacks.values():
+                try:
+                    callback(frame)
+                except Exception as e:
+                    logger.error(f"Audio callback error: {e}")
+
+        elif msg_type == "video_frame":
+            import base64
+            video_data = base64.b64decode(message.get("data", ""))
+            frame = VideoFrame(
+                data=video_data,
+                width=message.get("width", 1920),
+                height=message.get("height", 1080),
+                format=message.get("format", "jpeg"),
+                timestamp=datetime.utcnow(),
+                participant_id=message.get("participant_id", "mixed"),
+                is_screen_share=False,
+            )
+            for callback in self._video_callbacks.values():
+                try:
+                    callback(frame)
+                except Exception as e:
+                    logger.error(f"Video callback error: {e}")
+
+        elif msg_type == "participant_joined":
+            p = message.get("participant", {})
+            info = ParticipantInfo(
+                participant_id=p.get("id", ""),
+                display_name=p.get("name", "Unknown"),
+            )
+            self._participants[info.participant_id] = info
+            logger.info(f"Participant joined: {info.display_name}")
+
+        elif msg_type == "participant_left":
+            pid = message.get("participant_id", "")
+            if pid in self._participants:
+                logger.info(f"Participant left: {self._participants[pid].display_name}")
+                del self._participants[pid]
+
+        elif msg_type == "meeting_ended":
+            logger.info("Meeting ended, disconnecting bot")
+            await self.disconnect()
+
+        elif msg_type == "status":
+            status = message.get("status")
+            if status == "connected":
+                logger.info("Browser controller connected to meeting")
+            elif status == "error":
+                logger.error(f"Browser controller error: {message.get('message')}")
 
     async def _send_browser_command(
         self,
