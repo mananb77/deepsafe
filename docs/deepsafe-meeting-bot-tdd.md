@@ -239,7 +239,7 @@ This hybrid approach provides the operational simplicity of a monolith with the 
 |---|---|---|
 | Resemble AI Detect API | Audio deepfake detection (primary) | Resemble AI |
 | Sensity / GetReal API | Video deepfake detection (primary) | Sensity |
-| OpenAI GPT-4 | Social engineering semantic analysis, intent classification | OpenAI |
+| OpenAI GPT-4 Turbo (`gpt-4-turbo-preview`) | Social engineering semantic analysis, intent classification | OpenAI |
 | Wav2Vec 2.0 | Audio deepfake detection (local fallback) | Meta/Facebook Research |
 | EfficientNet-B4 | Video deepfake detection (local fallback, fine-tuned on FaceForensics++) | Google Research |
 | PyTorch | Local model inference runtime | PyTorch |
@@ -469,15 +469,18 @@ backend/src/
 │ id          (PK) │         │ evidence   (JSON)│
 │ meeting_id  (FK) │         │ timestamp        │
 │ participant_id(FK│         └──────────────────┘
-│ type             │
+│ incident_type    │
 │ severity         │         ┌──────────────────┐
 │ status           │         │  verifications   │
-│ risk_score       │         │                  │
-│ evidence   (JSON)│         │ id          (PK) │
+│ title            │         │                  │
+│ confidence_score │         │ id          (PK) │
 │ detected_at      │         │ session_id  (UQ) │
-│ resolved_at      │         │ user_id     (FK) │
-│ resolved_by      │         │ incident_id (FK) │
-└──────────────────┘         │ channel          │
+│ evidence_refs(JS)│         │ user_id     (FK) │
+│ resolved_at      │         │ incident_id (FK) │
+│ resolved_by_uid  │         │ channel          │
+│ actions_taken(JS)│
+│ detection_method │
+└──────────────────┘
                              │ status           │
 ┌──────────────────┐         │ code             │
 │    policies      │         │ attempts         │
@@ -1033,7 +1036,7 @@ This ensures that a single noisy detection doesn't spike the score, but sustaine
 │                                                                   │
 │  Outcomes:                                                        │
 │  • VERIFIED — User confirmed identity                             │
-│  • DENIED   — User reported fraud                                 │
+│  • FAILED   — Max attempts exceeded or user reported fraud         │
 │  • EXPIRED  — No response within timeout                          │
 │  • FAILED   — Max attempts exceeded                               │
 │                                                                   │
@@ -1117,7 +1120,7 @@ IVR Flow:
     → Voice biometric comparison
     → Match → VERIFIED
     → No match → "Verification failed. Connecting to IT security."
-4b. [2] → DENIED → Fraud alert triggered immediately
+4b. [2] → FAILED (fraud) → Fraud alert incident created immediately
 4c. [3] → Transfer to security team phone number
 ```
 
@@ -2031,50 +2034,74 @@ services:
 
 ```python
 # shared/config/settings.py — Pydantic BaseSettings
+# Settings are organized into domain-specific sub-classes
+# with env_prefix for namespacing.
+
+class DatabaseSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="DATABASE_")
+    url: str = "postgresql+asyncpg://deepsafe:deepsafe@localhost:5432/deepsafe"
+    pool_size: int = 20
+    max_overflow: int = 10
+
+class RedisSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="REDIS_")
+    url: str = "redis://localhost:6379/0"
+    max_connections: int = 50
+
+class MongoDBSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="MONGODB_")
+    url: str = "mongodb://localhost:27017/deepsafe"
+
+class CelerySettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="CELERY_")
+    broker_url: str = "amqp://guest:guest@localhost:5672//"
+    result_backend: str = "redis://localhost:6379/1"
+    worker_concurrency: int = 4
+
+class JWTSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="JWT_")
+    secret_key: str = "dev-secret-key-change-in-production"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 7
+
+class OpenAISettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="OPENAI_")
+    api_key: str = ""
+    model: str = "gpt-4-turbo-preview"
+    max_tokens: int = 1000
+    temperature: float = 0.3
+
+class TwilioSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="TWILIO_")
+    account_sid: str = ""
+    auth_token: str = ""
+    phone_number: str = ""
+
+class ResembleAISettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="RESEMBLE_")
+    api_key: str = ""
 
 class Settings(BaseSettings):
-    """Application configuration loaded from environment variables."""
+    """Root settings composing all sub-settings."""
+    environment: str = "development"
+    debug: bool = False
+    log_level: str = "INFO"
 
-    # Core
-    ENVIRONMENT: Literal["development", "staging", "production", "testing"]
-    SECRET_KEY: str
-    DEBUG: bool = False
-    LOG_LEVEL: str = "INFO"
+    database: DatabaseSettings = DatabaseSettings()
+    redis: RedisSettings = RedisSettings()
+    mongodb: MongoDBSettings = MongoDBSettings()
+    celery: CelerySettings = CelerySettings()
+    jwt: JWTSettings = JWTSettings()
+    openai: OpenAISettings = OpenAISettings()
+    twilio: TwilioSettings = TwilioSettings()
+    resemble: ResembleAISettings = ResembleAISettings()
 
-    # Database
-    DATABASE_URL: str           # PostgreSQL connection string
-    DATABASE_POOL_SIZE: int = 20
-    REDIS_URL: str              # Redis connection string
-    MONGODB_URL: str            # MongoDB connection string
-
-    # Celery
-    CELERY_BROKER_URL: str      # RabbitMQ connection string
-    CELERY_RESULT_BACKEND: str  # Redis for task results
-
-    # External API Keys
-    OPENAI_API_KEY: str
-    RESEMBLE_API_KEY: str
-    SENSITY_API_KEY: str
-
-    # Twilio
-    TWILIO_ACCOUNT_SID: str
-    TWILIO_AUTH_TOKEN: str
-    TWILIO_PHONE_NUMBER: str
-
-    # Platform Integrations
-    ZOOM_CLIENT_ID: str
-    ZOOM_CLIENT_SECRET: str
-    ZOOM_BOT_JID: str
-    GOOGLE_CLIENT_ID: str
-    GOOGLE_CLIENT_SECRET: str
-
-    # Detection Thresholds (configurable per deployment)
-    DETECTION_LOW_RISK_THRESHOLD: float = 0.30
-    DETECTION_MEDIUM_RISK_THRESHOLD: float = 0.60
-    DETECTION_HIGH_RISK_THRESHOLD: float = 0.85
-    DETECTION_AV_SYNC_THRESHOLD_MS: int = 42
-
-    model_config = SettingsConfigDict(env_file=".env")
+    # Detection thresholds
+    detection_low_threshold: float = 30.0
+    detection_medium_threshold: float = 60.0
+    detection_high_threshold: float = 85.0
+    detection_av_sync_threshold_ms: int = 42
 ```
 
 ---
@@ -2265,14 +2292,16 @@ DATABASE_URL=postgresql://...@localhost:5433/deepsafe_test
 
 | Module | Tests | Passing | Coverage |
 |---|---|---|---|
-| API Service | 166 | 166 | >90% |
+| API Service | 166+ | 166+ | >90% |
 | Detection Engine | ~100 | ~100 | >85% |
 | Verification Service | ~80 | ~80 | >90% |
 | Stream Processing | ~100 | ~90 | >80% |
 | — Audio Buffer | 30 | 30 | >95% |
-| — Alert Generator | 38 | 28 | ~75% |
+| — Alert Generator | 38 | 28 (10 failing) | ~75% |
 | Integration Tests | ~60 | ~60 | — |
-| **Total** | **586+** | **~560** | **>90% target** |
+| **Total** | **586+** | **~550+** | **>90% target** |
+
+> **Note:** Test count is based on Phase 6 implementation status. The codebase has grown to 800+ test functions across all test files, though not all may be actively passing. Run `pytest` for current counts.
 
 ---
 
